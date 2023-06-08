@@ -1,10 +1,12 @@
 using EventsAPI.Data;
+using EventsAPI.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 // Connection to database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Add DbContext
 services.AddSqlServer<ApplicationDbContext>(connectionString);
 
 // Add services to the container.
@@ -22,5 +24,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Endpoints
+app.MapAttendeeEndpoints();
+app.MapTalkEndpoints();
+app.MapEventEndpoints();
+app.MapGuestEndpoints();
+app.MapCategoryEndpoints();
+app.MapOrganizationEndpoints();
 
 app.Run();
