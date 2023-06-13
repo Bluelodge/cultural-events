@@ -1,40 +1,75 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsDTO;
+
 namespace EventsAPI.Endpoints;
 
 public static class CategoryEndpoints
 {
     public static void MapCategoryEndpoints (this IEndpointRouteBuilder routes)
     {
+        // Get all
         routes.MapGet("/api/Category", async (ApplicationDbContext db) =>
         {
-            return await db.Category.ToListAsync();
+            return await db.Category.AsNoTracking()
+                        .Include(c => c.Talks)
+                        .Select(m => m.MapCategoryResponse())
+                        .ToListAsync()
+            is List<CategoryResponse> model
+                ? Results.Ok(model)
+                : Results.NotFound();
         })
-        .WithTags("Category").WithName("GetAllCategorys")
-        .Produces<List<Category>>(StatusCodes.Status200OK);
+        .WithTags("Category")
+        .WithName("GetAllCategorys")
+        .Produces<List<CategoryResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapGet("/api/Category/{id}", async (int Id, ApplicationDbContext db) =>
+        // Get by id
+        routes.MapGet("/api/Category/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Category.FindAsync(Id)
-                is Category model
-                    ? Results.Ok(model)
-                    : Results.NotFound();
+            return await db.Category.AsNoTracking()
+                        .Include(c => c.Talks)
+                        .SingleOrDefaultAsync(c => c.Id == id)
+            is Data.Category model
+                ? Results.Ok(model.MapCategoryResponse())
+                : Results.NotFound();
         })
         .WithTags("Category")
         .WithName("GetCategoryById")
-        .Produces<Category>(StatusCodes.Status200OK)
+        .Produces<CategoryResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPut("/api/Category/{id}", async (int Id, Category category, ApplicationDbContext db) =>
+        // Create
+        routes.MapPost("/api/Category/", async (EventsDTO.Category input, ApplicationDbContext db) =>
         {
-            var foundModel = await db.Category.FindAsync(Id);
+            var category = new Data.Category
+            {
+                Id = input.Id,
+                Name = input.Name
+            };
 
-            if (foundModel is null)
+            db.Category.Add(category);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/api/Categorys/{category.Id}", category.MapCategoryResponse());
+        })
+        .WithTags("Category")
+        .WithName("CreateCategory")
+        .Produces<CategoryResponse>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Update
+        routes.MapPut("/api/Category/{id}", async (int id, EventsDTO.Category input, ApplicationDbContext db) =>
+        {
+            // Check if exist
+            var category = await db.Category.SingleOrDefaultAsync(c => c.Id == id);
+
+            if (category is null)
             {
                 return Results.NotFound();
             }
 
-            db.Update(category);
+            category.Name = input.Name;
 
             await db.SaveChangesAsync();
 
@@ -42,33 +77,25 @@ public static class CategoryEndpoints
         })
         .WithTags("Category")
         .WithName("UpdateCategory")
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status204NoContent);
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPost("/api/Category/", async (Category category, ApplicationDbContext db) =>
+        // Delete
+        routes.MapDelete("/api/Category/{id}", async (int id, ApplicationDbContext db) =>
         {
-            db.Category.Add(category);
-            await db.SaveChangesAsync();
-            return Results.Created($"/Categorys/{category.Id}", category);
-        })
-        .WithTags("Category")
-        .WithName("CreateCategory")
-        .Produces<Category>(StatusCodes.Status201Created);
-
-        routes.MapDelete("/api/Category/{id}", async (int Id, ApplicationDbContext db) =>
-        {
-            if (await db.Category.FindAsync(Id) is Category category)
+            // Check if exist
+            if (await db.Category.SingleOrDefaultAsync(c => c.Id == id) is Data.Category category)
             {
                 db.Category.Remove(category);
                 await db.SaveChangesAsync();
-                return Results.Ok(category);
+                return Results.Ok();
             }
 
             return Results.NotFound();
         })
         .WithTags("Category")
         .WithName("DeleteCategory")
-        .Produces<Category>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
     }
 }

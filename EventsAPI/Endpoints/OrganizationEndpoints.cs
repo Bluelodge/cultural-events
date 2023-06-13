@@ -1,75 +1,137 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsDTO;
+
 namespace EventsAPI.Endpoints;
 
 public static class OrganizationEndpoints
 {
     public static void MapOrganizationEndpoints (this IEndpointRouteBuilder routes)
     {
+        // Get all including many-to-many
         routes.MapGet("/api/Organization", async (ApplicationDbContext db) =>
         {
-            return await db.Organization.ToListAsync();
+            return await db.Organization.AsNoTracking()
+                        .Include(o => o.EventOrgs)
+                        .ThenInclude(eo => eo.Event)
+                        .Include(o => o.TalkOrgs)
+                        .ThenInclude(to => to.Talk)
+                        .Select(m => m.MapOrganizationResponse())
+                        .ToListAsync()
+            is List<OrganizationResponse> model
+                ? Results.Ok(model)
+                : Results.NotFound();
         })
         .WithTags("Organization")
         .WithName("GetAllOrganizations")
-        .Produces<List<Organization>>(StatusCodes.Status200OK);
+        .Produces<List<OrganizationResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapGet("/api/Organization/{id}", async (int Id, ApplicationDbContext db) =>
+        // Get by id including many-to-many
+        routes.MapGet("/api/Organization/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Organization.FindAsync(Id)
-                is Organization model
-                    ? Results.Ok(model)
-                    : Results.NotFound();
+            return await db.Organization.AsNoTracking()
+                        .Include(o => o.EventOrgs)
+                        .ThenInclude(eo => eo.Event)
+                        .Include(o => o.TalkOrgs)
+                        .ThenInclude(to => to.Talk)
+                        .SingleOrDefaultAsync(o => o.Id == id)
+            is Data.Organization model
+                ? Results.Ok(model.MapOrganizationResponse())
+                : Results.NotFound();
         })
         .WithTags("Organization")
         .WithName("GetOrganizationById")
-        .Produces<Organization>(StatusCodes.Status200OK)
+        .Produces<OrganizationResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPut("/api/Organization/{id}", async (int Id, Organization organization, ApplicationDbContext db) =>
+        // Create
+        routes.MapPost("/api/Organization/", async (EventsDTO.Organization input, ApplicationDbContext db) =>
         {
-            var foundModel = await db.Organization.FindAsync(Id);
+            // Check if Organization (corporatename) already exists
+            var existingOrg = await db.Organization
+                        .Where(o => o.CorporateName == input.CorporateName)
+                        .FirstOrDefaultAsync();
 
-            if (foundModel is null)
+            if (existingOrg == null)
+            {
+                var organization = new Data.Organization
+                {
+                    Id = input.Id,
+                    Name = input.Name,
+                    CorporateName = input.CorporateName,
+                    WebSite = input.WebSite
+                };
+
+                db.Organization.Add(organization);
+                await db.SaveChangesAsync();
+
+                return Results.Created($"/api/Organizations/{organization.Id}", organization.MapOrganizationResponse());
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+        })
+        .WithTags("Organization")
+        .WithName("CreateOrganization")
+        .Produces<OrganizationResponse>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Update
+        routes.MapPut("/api/Organization/{id}", async (int id, EventsDTO.Organization input, ApplicationDbContext db) =>
+        {
+            // Check if exist
+            var organization = await db.Organization.SingleOrDefaultAsync(o => o.Id == id);
+
+            if (organization is null)
             {
                 return Results.NotFound();
             }
 
-            db.Update(organization);
+            // Check if is duplicated when changing corporatename
+            var duplciateOrg = await db.Organization
+                        .Where(o => o.CorporateName == input.CorporateName)
+                        .ToListAsync();
 
-            await db.SaveChangesAsync();
+            if (duplciateOrg.Count == 1)
+            {
+                organization.Name = input.Name ?? organization.Name;
+                organization.CorporateName = input.CorporateName ?? organization.CorporateName;
+                organization.WebSite = input.WebSite ?? organization.WebSite;
 
-            return Results.NoContent();
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+            else
+            {
+                return Results.Conflict();
+            }
         })
         .WithTags("Organization")
         .WithName("UpdateOrganization")
+        .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status204NoContent);
+        .Produces(StatusCodes.Status409Conflict);
 
-        routes.MapPost("/api/Organization/", async (Organization organization, ApplicationDbContext db) =>
+        // Delete
+        routes.MapDelete("/api/Organization/{id}", async (int id, ApplicationDbContext db) =>
         {
-            db.Organization.Add(organization);
-            await db.SaveChangesAsync();
-            return Results.Created($"/Organizations/{organization.Id}", organization);
-        })
-        .WithTags("Organization")
-        .WithName("CreateOrganization")
-        .Produces<Organization>(StatusCodes.Status201Created);
-
-        routes.MapDelete("/api/Organization/{id}", async (int Id, ApplicationDbContext db) =>
-        {
-            if (await db.Organization.FindAsync(Id) is Organization organization)
+            // Check if exist
+            if (await db.Organization.SingleOrDefaultAsync(o => o.Id == id) is Data.Organization organization)
             {
                 db.Organization.Remove(organization);
                 await db.SaveChangesAsync();
-                return Results.Ok(organization);
+
+                return Results.Ok();
             }
 
             return Results.NotFound();
         })
         .WithTags("Organization")
         .WithName("DeleteOrganization")
-        .Produces<Organization>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
     }
 }

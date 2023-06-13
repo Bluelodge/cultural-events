@@ -1,41 +1,81 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsDTO;
+
 namespace EventsAPI.Endpoints;
 
 public static class EventEndpoints
 {
-    public static void MapEventEndpoints (this IEndpointRouteBuilder routes)
+    public static void MapEventEndpoints(this IEndpointRouteBuilder routes)
     {
+        // Get all including many-to-many
         routes.MapGet("/api/Event", async (ApplicationDbContext db) =>
         {
-            return await db.Event.ToListAsync();
+            return await db.Event.AsNoTracking()
+                            .Include(e => e.EventGuests)
+                            .ThenInclude(eg => eg.Guest)
+                            .Include(e => e.EventOrgs)
+                            .ThenInclude(eo => eo.Organization)
+                            .Select(m => m.MapEventResponse())
+                            .ToListAsync()
+            is List<EventResponse> model
+                ? Results.Ok(model)
+                : Results.NotFound();
         })
         .WithTags("Event")
         .WithName("GetAllEvents")
-        .Produces<List<Event>>(StatusCodes.Status200OK);
+        .Produces<List<EventResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapGet("/api/Event/{id}", async (int Id, ApplicationDbContext db) =>
+        // Get by id including many-to-many
+        routes.MapGet("/api/Event/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Event.FindAsync(Id)
-                is Event model
-                    ? Results.Ok(model)
+            return await db.Event.AsNoTracking()
+                        .Include(e => e.EventGuests)
+                        .ThenInclude(eg => eg.Guest)
+                        .Include(e => e.EventOrgs)
+                        .ThenInclude(eo => eo.Organization)
+                        .SingleOrDefaultAsync(e => e.Id == id)
+                is Data.Event model
+                    ? Results.Ok(model.MapEventResponse())
                     : Results.NotFound();
         })
         .WithTags("Event")
         .WithName("GetEventById")
-        .Produces<Event>(StatusCodes.Status200OK)
+        .Produces<EventResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPut("/api/Event/{id}", async (int Id, Event @event, ApplicationDbContext db) =>
+        // Create
+        routes.MapPost("/api/Event/", async (EventsDTO.Event input, ApplicationDbContext db) =>
         {
-            var foundModel = await db.Event.FindAsync(Id);
+            var events = new Data.Event
+            {
+                Id = input.Id,
+                Title = input.Title
+            };
 
-            if (foundModel is null)
+            db.Event.Add(events);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/api/Events/{events.Id}", events.MapEventResponse());
+        })
+        .WithTags("Event")
+        .WithName("CreateEvent")
+        .Produces<EventResponse>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Update
+        routes.MapPut("/api/Event/{id}", async (int id, EventsDTO.Event input, ApplicationDbContext db) =>
+        {
+            // Check if exist
+            var events = await db.Event.SingleOrDefaultAsync(e => e.Id == id);
+
+            if (events is null)
             {
                 return Results.NotFound();
             }
 
-            db.Update(@event);
+            events.Title = input.Title;
 
             await db.SaveChangesAsync();
 
@@ -43,33 +83,25 @@ public static class EventEndpoints
         })
         .WithTags("Event")
         .WithName("UpdateEvent")
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status204NoContent);
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPost("/api/Event/", async (Event @event, ApplicationDbContext db) =>
+        // Delete
+        routes.MapDelete("/api/Event/{id}", async (int id, ApplicationDbContext db) =>
         {
-            db.Event.Add(@event);
-            await db.SaveChangesAsync();
-            return Results.Created($"/Events/{@event.Id}", @event);
-        })
-        .WithTags("Event")
-        .WithName("CreateEvent")
-        .Produces<Event>(StatusCodes.Status201Created);
-
-        routes.MapDelete("/api/Event/{id}", async (int Id, ApplicationDbContext db) =>
-        {
-            if (await db.Event.FindAsync(Id) is Event @event)
+            // Check if exist
+            if (await db.Event.SingleOrDefaultAsync(e => e.Id == id) is Data.Event events)
             {
-                db.Event.Remove(@event);
+                db.Event.Remove(events);
                 await db.SaveChangesAsync();
-                return Results.Ok(@event);
+                return Results.Ok();
             }
 
             return Results.NotFound();
         })
         .WithTags("Event")
         .WithName("DeleteEvent")
-        .Produces<Event>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
     }
 }

@@ -13,7 +13,7 @@ public class Talk
 
     [Required]
     [StringLength(200)]
-    public string? Name { get; set; }
+    public string? Title { get; set; }
 
     [Required]
     [StringLength(4000)]
@@ -27,6 +27,6 @@ public class Talk
         EndTime?.Subtract(StartTime ?? EndTime ?? DateTimeOffset.MinValue) ?? TimeSpan.Zero;
 
     // One-to-Many (Child - Foreign Key)
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
 
 }

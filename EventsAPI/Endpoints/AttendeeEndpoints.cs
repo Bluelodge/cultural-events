@@ -1,75 +1,125 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsDTO;
+
 namespace EventsAPI.Endpoints;
 
 public static class AttendeeEndpoints
 {
     public static void MapAttendeeEndpoints (this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/api/Attendee", async (ApplicationDbContext db) =>
+        // Get for each attendee including many-to-many
+        routes.MapGet("/api/Attendee/{username}", async (string username, ApplicationDbContext db) =>
         {
-            return await db.Attendee.ToListAsync();
+            return await db.Attendee
+                        .Include(a => a.EventAttendees)
+                        .ThenInclude(ea=> ea.Event)
+                        .Include(a => a.TalkAttendees)
+                        .ThenInclude(ta => ta.Talk)
+                        .SingleOrDefaultAsync(a => a.UserName == username)
+            is Data.Attendee model
+                ? Results.Ok(model.MapAttendeeResponse())
+                : Results.NotFound();
         })
         .WithTags("Attendee")
-        .WithName("GetAllAttendees")
-        .Produces<List<Attendee>>(StatusCodes.Status200OK);
-
-        routes.MapGet("/api/Attendee/{id}", async (int Id, ApplicationDbContext db) =>
-        {
-            return await db.Attendee.FindAsync(Id)
-                is Attendee model
-                    ? Results.Ok(model)
-                    : Results.NotFound();
-        })
-        .WithTags("Attendee")
-        .WithName("GetAttendeeById")
-        .Produces<Attendee>(StatusCodes.Status200OK)
+        .WithName("GetAttendee")
+        .Produces<AttendeeResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        routes.MapPut("/api/Attendee/{id}", async (int Id, Attendee attendee, ApplicationDbContext db) =>
+        // Create
+        routes.MapPost("/api/Attendee/", async (EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
-            var foundModel = await db.Attendee.FindAsync(Id);
+            // Check if Attendee (username or email) already exist
+            var existingAttendee = await db.Attendee
+                        .Where(a => a.UserName == input.UserName ||
+                                    a.EmailAddress == input.EmailAddress)
+                        .FirstOrDefaultAsync();
 
-            if (foundModel is null)
+            if (existingAttendee == null)
+            {
+                var attendee = new Data.Attendee
+                {
+                    Id = input.Id,
+                    FirstName = input.FirstName,
+                    LastName = input.LastName,
+                    UserName = input.UserName,
+                    EmailAddress = input.EmailAddress,
+                    PhoneNumber = input.PhoneNumber
+                };
+
+                db.Attendee.Add(attendee);
+                await db.SaveChangesAsync();
+
+                return Results.Created($"/api/Attendee/{attendee.Id}", attendee);
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+
+        })
+        .WithTags("Attendee")
+        .WithName("CreateAttendee")
+        .Produces<AttendeeResponse>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Update
+        routes.MapPut("/api/Attendee/{id}", async (int id, EventsDTO.Attendee input, ApplicationDbContext db) =>
+        {
+            // Check if exists
+            var attendee = await db.Attendee.SingleOrDefaultAsync(a => a.Id == id);
+
+            if (attendee is null)
             {
                 return Results.NotFound();
             }
 
-            db.Update(attendee);
+            // Check if username and email are duplicated
+            var duplicateData = await db.Attendee
+                        .Where(a => a.UserName == input.UserName ||
+                                    a.EmailAddress == input.EmailAddress)
+                        .ToListAsync();
 
-            await db.SaveChangesAsync();
+            if (duplicateData.Count() == 1)
+            {
+                attendee.FirstName = input.FirstName ?? attendee.FirstName;
+                attendee.LastName = input.LastName ?? attendee.LastName;
+                attendee.UserName = input.UserName ?? attendee.UserName;
+                attendee.EmailAddress = input.EmailAddress ?? attendee.EmailAddress;
+                attendee.PhoneNumber = input.PhoneNumber ?? attendee.PhoneNumber;
 
-            return Results.NoContent();
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+
         })
         .WithTags("Attendee")
         .WithName("UpdateAttendee")
+        .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status204NoContent);
+        .Produces(StatusCodes.Status409Conflict);
 
-        routes.MapPost("/api/Attendee/", async (Attendee attendee, ApplicationDbContext db) =>
+        // Delete
+        routes.MapDelete("/api/Attendee/{id}", async (int id, ApplicationDbContext db) =>
         {
-            db.Attendee.Add(attendee);
-            await db.SaveChangesAsync();
-            return Results.Created($"/Attendees/{attendee.Id}", attendee);
-        })
-        .WithTags("Attendee")
-        .WithName("CreateAttendee")
-        .Produces<Attendee>(StatusCodes.Status201Created);
-
-        routes.MapDelete("/api/Attendee/{id}", async (int Id, ApplicationDbContext db) =>
-        {
-            if (await db.Attendee.FindAsync(Id) is Attendee attendee)
+            // Check if exist
+            if (await db.Attendee.SingleOrDefaultAsync(a => a.Id == id) is Data.Attendee attendee)
             {
                 db.Attendee.Remove(attendee);
                 await db.SaveChangesAsync();
-                return Results.Ok(attendee);
+                return Results.Ok();
             }
 
             return Results.NotFound();
         })
         .WithTags("Attendee")
         .WithName("DeleteAttendee")
-        .Produces<Attendee>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
     }
 }
