@@ -61,6 +61,13 @@ public static class EntityExtensions
                     Id = eo.OrganizationId,
                     Name = eo.Organization.Name
                 })
+                .ToList() ?? new(),
+            Talks = events.Talks?
+                .Select(e => new EventsDTO.Talk
+                {
+                    Id = e.Id,
+                    Title = e.Title
+                })
                 .ToList() ?? new()
         };
 
@@ -70,6 +77,7 @@ public static class EntityExtensions
         {
             Id = guest.Id,
             FullName = guest.FullName,
+            Position = guest.Position,
             Bio = guest.Bio,
             Social = guest.Social,
             WebSite = guest.WebSite,
@@ -125,8 +133,14 @@ public static class EntityExtensions
             CategoryId = talk.CategoryId,
             Category = new EventsDTO.Category
             {
-                Id = talk.CategoryId!.Value, // Pass int value to nullable int
-                Name = talk.Category?.Name // Avoid error on create
+                Id = talk.CategoryId!.GetValueOrDefault(),  // Pass int value to nullable int
+                Name = talk.Category?.Name                  // Avoid error on create
+            },
+            EventId = talk.EventId,
+            Event = new EventsDTO.Event
+            {
+                Id = talk.EventId!.GetValueOrDefault(),     // Pass int value to nullable int
+                Title = talk.Event?.Title                   // Avoid error on create
             },
             Guests = talk.TalkGuests?
                 .Select(tg => new EventsDTO.Guest

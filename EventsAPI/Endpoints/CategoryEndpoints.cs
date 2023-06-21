@@ -42,16 +42,30 @@ public static class CategoryEndpoints
         // Create
         routes.MapPost("/api/Category/", async (EventsDTO.Category input, ApplicationDbContext db) =>
         {
-            var category = new Data.Category
+            // Check if exist
+            var existingCategory = await db.Category
+                        .Where(c => c.Name == input.Name)
+                        .FirstOrDefaultAsync();
+
+            if (existingCategory == null)
             {
-                Id = input.Id,
-                Name = input.Name
-            };
+                var category = new Data.Category
+                {
+                    Id = input.Id,
+                    Name = input.Name
+                };
 
-            db.Category.Add(category);
-            await db.SaveChangesAsync();
+                db.Category.Add(category);
+                await db.SaveChangesAsync();
 
-            return Results.Created($"/api/Categorys/{category.Id}", category.MapCategoryResponse());
+                return Results.Created($"/api/Categorys/{category.Id}", category.MapCategoryResponse());
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+
+            
         })
         .WithTags("Category")
         .WithName("CreateCategory")
@@ -69,16 +83,30 @@ public static class CategoryEndpoints
                 return Results.NotFound();
             }
 
-            category.Name = input.Name;
+            // Check if Name is duplicated ignoring own id
+            var duplicatedCategory = await db.Category
+                        .Where(c => c.Name == input.Name &&
+                                    c.Id != id)
+                        .FirstOrDefaultAsync();
 
-            await db.SaveChangesAsync();
+            if (duplicatedCategory == null)
+            {
+                category.Name = input.Name;
 
-            return Results.NoContent();
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+            else
+            {
+                return Results.Conflict();
+            }
         })
         .WithTags("Category")
         .WithName("UpdateCategory")
         .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
 
         // Delete
         routes.MapDelete("/api/Category/{id}", async (int id, ApplicationDbContext db) =>

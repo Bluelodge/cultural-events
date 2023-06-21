@@ -27,6 +27,7 @@ public class Talk
         EndTime?.Subtract(StartTime ?? EndTime ?? DateTimeOffset.MinValue) ?? TimeSpan.Zero;
 
     // One-to-Many (Child - Foreign Key)
-    public int? CategoryId { get; set; }
+    public int? CategoryId { get; set; }    // Optional
+    public int? EventId { get; set; }       // Required
 
 }

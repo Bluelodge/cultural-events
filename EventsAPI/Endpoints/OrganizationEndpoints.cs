@@ -66,7 +66,7 @@ public static class OrganizationEndpoints
                 db.Organization.Add(organization);
                 await db.SaveChangesAsync();
 
-                return Results.Created($"/api/Organizations/{organization.Id}", organization.MapOrganizationResponse());
+                return Results.Created($"/api/Organization/{organization.Id}", organization.MapOrganizationResponse());
             }
             else
             {
@@ -89,12 +89,13 @@ public static class OrganizationEndpoints
                 return Results.NotFound();
             }
 
-            // Check if is duplicated when changing corporatename
-            var duplciateOrg = await db.Organization
-                        .Where(o => o.CorporateName == input.CorporateName)
-                        .ToListAsync();
+            // Check if is duplicated when changing corporatename ignoring own id
+            var duplciatedOrg = await db.Organization
+                        .Where(o => o.CorporateName == input.CorporateName &&
+                                    o.Id != id)
+                        .FirstOrDefaultAsync();
 
-            if (duplciateOrg.Count == 1)
+            if (duplciatedOrg == null)
             {
                 organization.Name = input.Name ?? organization.Name;
                 organization.CorporateName = input.CorporateName ?? organization.CorporateName;

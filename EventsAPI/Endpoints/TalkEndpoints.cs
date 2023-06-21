@@ -13,6 +13,7 @@ public static class TalkEndpoints
         {
             return await db.Talk.AsNoTracking()
                         .Include(t => t.Category)
+                        .Include(t => t.Event)
                         .Include(t => t.TalkGuests)
                         .ThenInclude(tg => tg.Guest)
                         .Include(t => t.TalkOrgs)
@@ -33,6 +34,7 @@ public static class TalkEndpoints
         {
             return await db.Talk.AsNoTracking()
                         .Include(t => t.Category)
+                        .Include(t => t.Event)
                         .Include(t => t.TalkGuests)
                         .ThenInclude(tg => tg.Guest)
                         .Include(t => t.TalkOrgs)
@@ -50,19 +52,32 @@ public static class TalkEndpoints
         // Create
         routes.MapPost("/api/Talk/", async (EventsDTO.Talk input, ApplicationDbContext db) =>
         {
-            var talk = new Data.Talk
+            // Check if exist
+            var existingTalk = await db.Talk
+                        .Where(t => t.Title == input.Title)
+                        .FirstOrDefaultAsync();
+
+            if (existingTalk == null)
             {
-                Title = input.Title,
-                Summarize = input.Summarize,
-                StartTime = input.StartTime,
-                EndTime = input.EndTime,
-                CategoryId = input.CategoryId
-            };
+                var talk = new Data.Talk
+                {
+                    Title = input.Title,
+                    Summarize = input.Summarize,
+                    StartTime = input.StartTime,
+                    EndTime = input.EndTime,
+                    CategoryId = input.CategoryId,
+                    EventId = input.EventId
+                };
 
-            db.Talk.Add(talk);
-            await db.SaveChangesAsync();
+                db.Talk.Add(talk);
+                await db.SaveChangesAsync();
 
-            return Results.Created($"/api/Talk/{talk.Id}", talk.MapTalkResponse());
+                return Results.Created($"/api/Talk/{talk.Id}", talk.MapTalkResponse());
+            }
+            else
+            {
+                return Results.Conflict();
+            }
         })
         .WithTags("Talk")
         .WithName("CreateTalk")
@@ -80,15 +95,29 @@ public static class TalkEndpoints
                 return Results.NotFound();
             }
 
-            talk.Title = input.Title ?? talk.Title;
-            talk.Summarize = input.Summarize ?? talk.Summarize;
-            talk.StartTime = input.StartTime ?? talk.StartTime;
-            talk.EndTime = input.EndTime ?? talk.EndTime;
-            talk.CategoryId = input.CategoryId ?? talk.CategoryId;
+            // Check if Title is duplicated ignoring own id
+            var duplicatedTalk = await db.Talk
+                        .Where(t => t.Title == input.Title &&
+                                    t.Id == id)
+                        .FirstOrDefaultAsync();
 
-            await db.SaveChangesAsync();
+            if (duplicatedTalk == null)
+            {
+                talk.Title = input.Title ?? talk.Title;
+                talk.Summarize = input.Summarize ?? talk.Summarize;
+                talk.StartTime = input.StartTime ?? talk.StartTime;
+                talk.EndTime = input.EndTime ?? talk.EndTime;
+                talk.CategoryId = input.CategoryId ?? talk.CategoryId;
+                talk.EventId = input.EventId ?? talk.EventId;
 
-            return Results.NoContent();
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+            else
+            {
+                return Results.Conflict();
+            }
         })
         .WithTags("Talk")
         .WithName("UpdateTalk")

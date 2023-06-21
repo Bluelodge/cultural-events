@@ -75,17 +75,22 @@ public static class AttendeeEndpoints
             }
 
             // Check if username and email are duplicated
-            var duplicateData = await db.Attendee
-                        .Where(a => a.UserName == input.UserName ||
-                                    a.EmailAddress == input.EmailAddress)
-                        .ToListAsync();
+            var username = input.UserName ?? attendee.UserName;
+            var email = input.EmailAddress ?? attendee.EmailAddress;
 
-            if (duplicateData.Count() == 1)
+            // Verify values ignoring own id
+            var duplicatedAttendee = await db.Attendee
+                        .Where(a => (a.UserName == username ||
+                                    a.EmailAddress == email) &&
+                                    a.Id != id)
+                        .FirstOrDefaultAsync();
+
+            if (duplicatedAttendee == null)
             {
                 attendee.FirstName = input.FirstName ?? attendee.FirstName;
                 attendee.LastName = input.LastName ?? attendee.LastName;
-                attendee.UserName = input.UserName ?? attendee.UserName;
-                attendee.EmailAddress = input.EmailAddress ?? attendee.EmailAddress;
+                attendee.UserName = username;
+                attendee.EmailAddress = email;
                 attendee.PhoneNumber = input.PhoneNumber ?? attendee.PhoneNumber;
 
                 await db.SaveChangesAsync();

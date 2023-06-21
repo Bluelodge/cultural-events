@@ -9,4 +9,5 @@ public class Talk : EventsDTO.Talk
 
     // One-to-Many (Child - Reference navigation)
     public Category Category { get; set; } = null!;
+    public Event Event { get; set; } = null!;
 }

@@ -12,12 +12,13 @@ public static class EventEndpoints
         routes.MapGet("/api/Event", async (ApplicationDbContext db) =>
         {
             return await db.Event.AsNoTracking()
-                            .Include(e => e.EventGuests)
-                            .ThenInclude(eg => eg.Guest)
-                            .Include(e => e.EventOrgs)
-                            .ThenInclude(eo => eo.Organization)
-                            .Select(m => m.MapEventResponse())
-                            .ToListAsync()
+                        .Include(e => e.EventGuests)
+                        .ThenInclude(eg => eg.Guest)
+                        .Include(e => e.EventOrgs)
+                        .ThenInclude(eo => eo.Organization)
+                        .Include(e => e.Talks)
+                        .Select(m => m.MapEventResponse())
+                        .ToListAsync()
             is List<EventResponse> model
                 ? Results.Ok(model)
                 : Results.NotFound();
@@ -35,6 +36,7 @@ public static class EventEndpoints
                         .ThenInclude(eg => eg.Guest)
                         .Include(e => e.EventOrgs)
                         .ThenInclude(eo => eo.Organization)
+                        .Include(e => e.Talks)
                         .SingleOrDefaultAsync(e => e.Id == id)
                 is Data.Event model
                     ? Results.Ok(model.MapEventResponse())
@@ -48,16 +50,29 @@ public static class EventEndpoints
         // Create
         routes.MapPost("/api/Event/", async (EventsDTO.Event input, ApplicationDbContext db) =>
         {
-            var events = new Data.Event
+            // Check if exist
+            var existingEvent = await db.Event
+                        .Where(e => e.Title == input.Title)
+                        .FirstOrDefaultAsync();
+
+            if (existingEvent == null)
             {
-                Id = input.Id,
-                Title = input.Title
-            };
+                var events = new Data.Event
+                {
+                    Id = input.Id,
+                    Title = input.Title
+                };
 
-            db.Event.Add(events);
-            await db.SaveChangesAsync();
+                db.Event.Add(events);
+                await db.SaveChangesAsync();
 
-            return Results.Created($"/api/Events/{events.Id}", events.MapEventResponse());
+                return Results.Created($"/api/Events/{events.Id}", events.MapEventResponse());
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+            
         })
         .WithTags("Event")
         .WithName("CreateEvent")
@@ -75,16 +90,31 @@ public static class EventEndpoints
                 return Results.NotFound();
             }
 
-            events.Title = input.Title;
+            // Check if Title is duplicated ignoring own id
+            var duplicatedEvent = await db.Event
+                        .Where(e => e.Title == input.Title &&
+                                    e.Id != id)
+                        .FirstOrDefaultAsync();
 
-            await db.SaveChangesAsync();
+            if (duplicatedEvent == null)
+            {
+                events.Title = input.Title;
 
-            return Results.NoContent();
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+            
         })
         .WithTags("Event")
         .WithName("UpdateEvent")
         .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
 
         // Delete
         routes.MapDelete("/api/Event/{id}", async (int id, ApplicationDbContext db) =>

@@ -16,6 +16,10 @@ public class Guest
     public string? FullName { get; set; }
 
     [Required]
+    [StringLength(400)]
+    public string? Position { get; set; }
+
+    [Required]
     [StringLength(4000)]
     public string? Bio { get; set; }
 
