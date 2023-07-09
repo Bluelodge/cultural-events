@@ -43,12 +43,12 @@ public class ApplicationDbContext : DbContext
 
         // Many-to-Many
         modelBuilder.Entity<EventAttendee>().HasKey(ea => new { ea.EventId, ea.AttendeeId });
-        modelBuilder.Entity<EventGuest>().HasKey(eh => new { eh.EventId, eh.GuestId });
+        modelBuilder.Entity<EventGuest>().HasKey(eg => new { eg.EventId, eg.GuestId });
         modelBuilder.Entity<EventOrg>().HasKey(eo => new { eo.EventId, eo.OrganizationId });
         
-        modelBuilder.Entity<TalkAttendee>().HasKey(ea => new { ea.TalkId, ea.AttendeeId });
-        modelBuilder.Entity<TalkGuest>().HasKey(eh => new { eh.TalkId, eh.GuestId });
-        modelBuilder.Entity<TalkOrg>().HasKey(eo => new { eo.TalkId, eo.OrganizationId });
+        modelBuilder.Entity<TalkAttendee>().HasKey(ta => new { ta.TalkId, ta.AttendeeId });
+        modelBuilder.Entity<TalkGuest>().HasKey(tg => new { tg.TalkId, tg.GuestId });
+        modelBuilder.Entity<TalkOrg>().HasKey(to => new { to.TalkId, to.OrganizationId });
     }
 
     public DbSet<Attendee> Attendee => Set<Attendee>();
