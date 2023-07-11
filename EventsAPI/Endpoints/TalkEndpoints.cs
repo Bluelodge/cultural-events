@@ -141,5 +141,205 @@ public static class TalkEndpoints
         .WithName("DeleteTalk")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
+
+        // Update many-to-many with Guest
+        routes.MapPut("api/Talk/{id}/Guest", async (int id, List<int> inputGuestIds, ApplicationDbContext db) =>
+        {
+            // Check if Talk exist
+            var talk = await db.Talk
+                        .AsQueryable()
+                        .Include(t => t.TalkGuests)
+                        .SingleOrDefaultAsync(t => t.Id == id);
+
+            if (talk == null)
+            {
+                return Results.NotFound();
+            }
+
+            // Get existing TalkGuest relations
+            var existingTalkGuest = talk.TalkGuests.ToList();
+
+            // Check if Guest and relations are empty
+            if (inputGuestIds.Count == 0 && existingTalkGuest.Count == 0)
+            {
+                return Results.Ok();
+            }
+
+            // Check if all Guest exist
+            foreach (var gst in inputGuestIds)
+            {
+                var guest = await db.Guest.SingleOrDefaultAsync(g => g.Id == gst);
+
+                if (guest == null)
+                {
+                    return Results.Conflict();
+                }
+            }
+
+            // Check for Guest duplicates
+            if (inputGuestIds.Count != inputGuestIds.Distinct().Count())
+            {
+                return Results.Conflict();
+            }
+
+            // Insert all Guest inputs on empty relations
+            if (existingTalkGuest.Count == 0)
+            {
+                foreach (var gst in inputGuestIds)
+                {
+                    talk.TalkGuests.Add(new TalkGuest
+                    {
+                        TalkId = id,
+                        GuestId = gst
+                    });
+                }
+
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+
+            // Check for no relation changes
+            inputGuestIds.Sort();
+            var existingTgIds = existingTalkGuest.Select(tg => tg.GuestId).ToList();
+            existingTgIds.Sort();
+
+            if (existingTgIds.SequenceEqual(inputGuestIds))
+            {
+                return Results.Ok();
+            }
+
+            // Add new relations
+            foreach (var gst in inputGuestIds)
+            {
+                if (existingTalkGuest.Where(tg => tg.GuestId == gst).Count() == 0)
+                {
+                    talk.TalkGuests.Add(new TalkGuest
+                    {
+                        TalkId = id,
+                        GuestId = gst
+                    });
+                }
+            }
+
+            // Delete non existing relations
+            foreach (var gst in existingTalkGuest)
+            {
+                if (inputGuestIds.Contains(gst.GuestId) == false)
+                {
+                    talk.TalkGuests.Remove(gst);
+                }
+            }
+
+            await db.SaveChangesAsync();
+
+            return Results.NoContent();
+        })
+        .WithTags("Talk")
+        .WithName("UpdateTalkGuest")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Update many-to-many with Organization
+        routes.MapPut("api/Talk/{id}/Org", async (int id, List<int> inputOrgIds, ApplicationDbContext db) =>
+        {
+            // Check if Talk exist
+            var talk = await db.Talk
+                        .AsQueryable()
+                        .Include(t => t.TalkOrgs)
+                        .SingleOrDefaultAsync();
+
+            if (talk == null)
+            {
+                return Results.NotFound();
+            }
+
+            // Get existing TalkOrg relations
+            var existingTalkOrg = talk.TalkOrgs.ToList();
+
+            // Check if Orgs and relations are empty
+            if (inputOrgIds.Count == 0 && existingTalkOrg.Count == 0)
+            {
+                return Results.Ok();
+            }
+
+            // Check if all Orgs exist
+            foreach (var org in inputOrgIds)
+            {
+                var organization = await db.Organization.SingleOrDefaultAsync(o => o.Id == org);
+
+                if (organization == null)
+                {
+                    return Results.Conflict();
+                }
+            }
+
+            // Check for duplicates
+            if (inputOrgIds.Count != inputOrgIds.Distinct().Count())
+            {
+                return Results.Conflict();
+            }
+
+            // Insert all Organization inputs on empty relations
+            if (existingTalkOrg.Count == 0)
+            {
+                foreach (var org in inputOrgIds)
+                {
+                    talk.TalkOrgs.Add(new TalkOrg
+                    {
+                        TalkId = id,
+                        OrganizationId = org
+                    });
+                }
+
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            }
+
+            // Check for no relation changes
+            inputOrgIds.Sort();
+            var existingToIds = existingTalkOrg.Select(to => to.OrganizationId).ToList();
+            existingToIds.Sort();
+
+            if (existingToIds.SequenceEqual(inputOrgIds))
+            {
+                return Results.Ok();
+            }
+
+            // Add new relations
+            foreach (var org in inputOrgIds)
+            {
+                if (existingTalkOrg.Where(to => to.OrganizationId == org).Count() == 0)
+                {
+                    talk.TalkOrgs.Add(new TalkOrg
+                    {
+                        TalkId = id,
+                        OrganizationId = org
+                    });
+                }
+            }
+
+            // Delete non existing relations
+            foreach (var tOrg in existingTalkOrg)
+            {
+                if (inputOrgIds.Contains(tOrg.OrganizationId) == false)
+                {
+                    talk.TalkOrgs.Remove(tOrg);
+                }
+            }
+
+            await db.SaveChangesAsync();
+
+            return Results.NoContent();
+        })
+        .WithTags("Talk")
+        .WithName("UpdateTalkOrg")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
     }
 }
