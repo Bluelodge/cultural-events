@@ -249,7 +249,7 @@ public static class TalkEndpoints
             var talk = await db.Talk
                         .AsQueryable()
                         .Include(t => t.TalkOrgs)
-                        .SingleOrDefaultAsync();
+                        .SingleOrDefaultAsync(t => t.Id == id);
 
             if (talk == null)
             {
