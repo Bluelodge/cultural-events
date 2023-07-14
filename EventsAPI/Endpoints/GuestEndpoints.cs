@@ -38,7 +38,7 @@ public static class GuestEndpoints
                         .SingleOrDefaultAsync(g => g.Id == id)
                 is Data.Guest model
                     ? Results.Ok(model.MapGuestResponse())
-                    : Results.NotFound();
+                    : Results.NotFound(new { Guest = id });
         })
         .WithTags("Guest")
         .WithName("GetGuestById")
@@ -73,7 +73,7 @@ public static class GuestEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Guest with name '{input.FullName}' and position '{input.Position}' already exists" });
             }
 
         })
@@ -90,7 +90,7 @@ public static class GuestEndpoints
 
             if (guest is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Guest = id });
             }
 
             // Check if Name and Position are duplicates (composite key)
@@ -118,7 +118,7 @@ public static class GuestEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Guest already has the name '{input.FullName}' and position '{input.Position}'" });
             }
                 
         })
@@ -139,7 +139,7 @@ public static class GuestEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Guest = id });
         })
         .WithTags("Guest")
         .WithName("DeleteGuest")

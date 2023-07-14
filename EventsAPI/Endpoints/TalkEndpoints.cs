@@ -42,7 +42,7 @@ public static class TalkEndpoints
                         .SingleOrDefaultAsync(t => t.Id == id)
             is Data.Talk model
                 ? Results.Ok(model.MapTalkResponse())
-                : Results.NotFound();
+                : Results.NotFound(new { Talk = id });
         })
         .WithTags("Talk")
         .WithName("GetTalkById")
@@ -76,7 +76,7 @@ public static class TalkEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Talk with title '{input.Title}' already exists" });
             }
         })
         .WithTags("Talk")
@@ -92,13 +92,13 @@ public static class TalkEndpoints
 
             if (talk is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Talk = id });
             }
 
             // Check if Title is duplicated ignoring own id
             var duplicatedTalk = await db.Talk
                         .Where(t => t.Title == input.Title &&
-                                    t.Id == id)
+                                    t.Id != id)
                         .FirstOrDefaultAsync();
 
             if (duplicatedTalk == null)
@@ -116,7 +116,7 @@ public static class TalkEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Talk already has the title '{input.Title}'" });
             }
         })
         .WithTags("Talk")
@@ -135,7 +135,7 @@ public static class TalkEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Talk = id });
         })
         .WithTags("Talk")
         .WithName("DeleteTalk")
@@ -153,7 +153,7 @@ public static class TalkEndpoints
 
             if (talk == null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Talk = id });
             }
 
             // Get existing TalkGuest relations
@@ -172,14 +172,14 @@ public static class TalkEndpoints
 
                 if (guest == null)
                 {
-                    return Results.Conflict();
+                    return Results.NotFound(new { Guest = gst });
                 }
             }
 
             // Check for Guest duplicates
             if (inputGuestIds.Count != inputGuestIds.Distinct().Count())
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = "Guest ids can't be duplicated" });
             }
 
             // Insert all Guest inputs on empty relations
@@ -253,7 +253,7 @@ public static class TalkEndpoints
 
             if (talk == null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Talk = id });
             }
 
             // Get existing TalkOrg relations
@@ -272,14 +272,14 @@ public static class TalkEndpoints
 
                 if (organization == null)
                 {
-                    return Results.Conflict();
+                    return Results.NotFound(new { Organization = org });
                 }
             }
 
             // Check for duplicates
             if (inputOrgIds.Count != inputOrgIds.Distinct().Count())
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = "Organization ids can't be duplicated" });
             }
 
             // Insert all Organization inputs on empty relations

@@ -40,7 +40,7 @@ public static class EventEndpoints
                         .SingleOrDefaultAsync(e => e.Id == id)
                 is Data.Event model
                     ? Results.Ok(model.MapEventResponse())
-                    : Results.NotFound();
+                    : Results.NotFound(new { Event = id });
         })
         .WithTags("Event")
         .WithName("GetEventById")
@@ -70,7 +70,7 @@ public static class EventEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Event with title '{input.Title}' already exists"});
             }
             
         })
@@ -80,14 +80,14 @@ public static class EventEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Event/{id}", async (int id, EventsDTO.Event input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Events/{id}", async (int id, EventsDTO.Event input, ApplicationDbContext db) =>
         {
             // Check if exist
             var events = await db.Event.SingleOrDefaultAsync(e => e.Id == id);
 
             if (events is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Event = id });
             }
 
             // Check if Title is duplicated ignoring own id
@@ -106,7 +106,7 @@ public static class EventEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Event already has the title '{input.Title}'" });
             }
             
         })
@@ -127,7 +127,7 @@ public static class EventEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Event = id });
         })
         .WithTags("Event")
         .WithName("DeleteEvent")

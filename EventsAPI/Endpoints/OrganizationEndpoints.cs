@@ -38,7 +38,7 @@ public static class OrganizationEndpoints
                         .SingleOrDefaultAsync(o => o.Id == id)
             is Data.Organization model
                 ? Results.Ok(model.MapOrganizationResponse())
-                : Results.NotFound();
+                : Results.NotFound(new { Organization = id });
         })
         .WithTags("Organization")
         .WithName("GetOrganizationById")
@@ -70,7 +70,7 @@ public static class OrganizationEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Organization with corporate name '{input.CorporateName}' already exists" });
             }
         })
         .WithTags("Organization")
@@ -86,7 +86,7 @@ public static class OrganizationEndpoints
 
             if (organization is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Organization = id });
             }
 
             // Check if is duplicated when changing corporatename ignoring own id
@@ -107,7 +107,7 @@ public static class OrganizationEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Organization already has the corporate name '{input.CorporateName}'" });
             }
         })
         .WithTags("Organization")
@@ -128,7 +128,7 @@ public static class OrganizationEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Organization = id });
         })
         .WithTags("Organization")
         .WithName("DeleteOrganization")

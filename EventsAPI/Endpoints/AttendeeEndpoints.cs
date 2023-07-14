@@ -19,7 +19,7 @@ public static class AttendeeEndpoints
                         .SingleOrDefaultAsync(a => a.UserName == username)
             is Data.Attendee model
                 ? Results.Ok(model.MapAttendeeResponse())
-                : Results.NotFound();
+                : Results.NotFound(new { Attendee = username });
         })
         .WithTags("Attendee")
         .WithName("GetAttendeeByUsername")
@@ -54,7 +54,9 @@ public static class AttendeeEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(
+                    new { Error = $"Attendee with username '{input.UserName}' or email '{input.EmailAddress}' already exists"}
+                );
             }
 
         })
@@ -71,7 +73,7 @@ public static class AttendeeEndpoints
 
             if (attendee is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Attendee = id });
             }
 
             // Check if username and email are duplicated
@@ -99,7 +101,7 @@ public static class AttendeeEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Attendee already has the username '{input.UserName}' or email '{input.EmailAddress}'" });
             }
 
         })
@@ -120,7 +122,7 @@ public static class AttendeeEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Attendee = id });
         })
         .WithTags("Attendee")
         .WithName("DeleteAttendee")
@@ -181,7 +183,7 @@ public static class AttendeeEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"The relation between Attedee '{username}' and Talk '{talk.Title}' already exists" });
             }
 
             await db.SaveChangesAsync();

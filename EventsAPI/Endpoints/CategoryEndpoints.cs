@@ -32,7 +32,7 @@ public static class CategoryEndpoints
                         .SingleOrDefaultAsync(c => c.Id == id)
             is Data.Category model
                 ? Results.Ok(model.MapCategoryResponse())
-                : Results.NotFound();
+                : Results.NotFound(new { Category = id });
         })
         .WithTags("Category")
         .WithName("GetCategoryById")
@@ -62,10 +62,8 @@ public static class CategoryEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Category with name '{input.Name}' already exists" });
             }
-
-            
         })
         .WithTags("Category")
         .WithName("CreateCategory")
@@ -80,7 +78,7 @@ public static class CategoryEndpoints
 
             if (category is null)
             {
-                return Results.NotFound();
+                return Results.NotFound(new { Category = id });
             }
 
             // Check if Name is duplicated ignoring own id
@@ -99,7 +97,7 @@ public static class CategoryEndpoints
             }
             else
             {
-                return Results.Conflict();
+                return Results.Conflict(new { Error = $"Another Category already has the name '{input.Name}'" });
             }
         })
         .WithTags("Category")
@@ -119,7 +117,7 @@ public static class CategoryEndpoints
                 return Results.Ok();
             }
 
-            return Results.NotFound();
+            return Results.NotFound(new { Category = id });
         })
         .WithTags("Category")
         .WithName("DeleteCategory")
