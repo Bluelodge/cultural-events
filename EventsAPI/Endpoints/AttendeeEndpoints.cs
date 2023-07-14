@@ -126,5 +126,107 @@ public static class AttendeeEndpoints
         .WithName("DeleteAttendee")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
+
+        // Get all Talks from Attendee
+        routes.MapGet("/api/Attendee/{username}/Talks", async (string username, ApplicationDbContext db) =>
+        {
+            var talks = await db.Talk
+                        .AsNoTracking()
+                        .Include(a => a.TalkAttendees)
+                        .Where(t => t.TalkAttendees.Any(ta => ta.Attendee.UserName == username))
+                        .Select(m => m.MapTalkResponse())
+                        .ToListAsync();
+
+            return talks is List<TalkResponse> model
+                ? Results.Ok(model)
+                : Results.NotFound();
+        })
+        .WithTags("Attendee")
+        .WithName("GetAllTalksFromAttendee")
+        .Produces<List<TalkResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
+
+        // Add many-to-many with Talk
+        routes.MapPost("/api/Attendee/{username}/Talk/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        {
+            // Check if Attendee exist
+            var attendee = await db.Attendee
+                            .Include(a => a.TalkAttendees)
+                            .SingleOrDefaultAsync(a => a.UserName == username);
+
+            if (attendee == null)
+            {
+                return Results.NotFound(new { Attendee = username });
+            }
+
+            // Check if Talk exist
+            var talk = await db.Talk.SingleOrDefaultAsync(t => t.Id == talkId);
+
+            if (talk == null)
+            {
+                return Results.NotFound(new { Talk = talkId });
+            }
+
+            // Check for duplicate
+            var talkAttendee = attendee.TalkAttendees.SingleOrDefault(ta => ta.TalkId == talkId);
+
+            // Insert on empty relation
+            if (talkAttendee == null)
+            {
+                attendee.TalkAttendees.Add(new TalkAttendee
+                {
+                    Talk = talk,
+                    Attendee = attendee
+                });
+            }
+            else
+            {
+                return Results.Conflict();
+            }
+
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/api/Attendee/{attendee.UserName}", attendee.MapAttendeeResponse());
+        })
+        .WithTags("Attendee")
+        .WithName("AddTalkToAttendee")
+        .Produces<AttendeeResponse>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
+
+        // Delete many-to-many with Talk
+        routes.MapDelete("/api/Attendee/{username}/Talk/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        {
+            // Check if Attendee exists
+            var attendee = await db.Attendee
+                            .Include(a => a.TalkAttendees)
+                            .SingleOrDefaultAsync(a => a.UserName == username);
+
+            if (attendee is Data.Attendee)
+            {
+                // Check if Talk exist
+                if (await db.Talk.SingleOrDefaultAsync(t => t.Id == talkId) is Data.Talk talk)
+                {
+                    var talkAttendee = attendee.TalkAttendees.SingleOrDefault(ta => ta.TalkId == talkId);
+
+                    // Verify data
+                    if (talkAttendee is TalkAttendee)
+                    {
+                        attendee.TalkAttendees.Remove(talkAttendee);
+
+                        await db.SaveChangesAsync();
+
+                        return Results.Ok();
+                    }
+                }
+            }
+
+            return Results.NotFound();
+        })
+        .WithTags("Attendee")
+        .WithName("RemoveTalkFromAttendee")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
+
     }
 }

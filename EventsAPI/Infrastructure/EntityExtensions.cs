@@ -22,7 +22,7 @@ public static class EntityExtensions
                 .Select(ta => new EventsDTO.Talk
                 {
                     Id = ta.TalkId,
-                    Title = ta.Talk.Title
+                    Title = ta.Talk?.Title                  // Avoid error on many-to-many add
                 })
                 .ToList() ?? new()
         };
