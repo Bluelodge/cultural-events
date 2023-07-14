@@ -9,7 +9,7 @@ public static class TalkEndpoints
     public static void MapTalkEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Talk", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Talks", async (ApplicationDbContext db) =>
         {
             return await db.Talk.AsNoTracking()
                         .Include(t => t.Category)
@@ -30,7 +30,7 @@ public static class TalkEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Talk/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Talks/{id}", async (int id, ApplicationDbContext db) =>
         {
             return await db.Talk.AsNoTracking()
                         .Include(t => t.Category)
@@ -50,7 +50,7 @@ public static class TalkEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Talk/", async (EventsDTO.Talk input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Talks/", async (EventsDTO.Talk input, ApplicationDbContext db) =>
         {
             // Check if exist
             var existingTalk = await db.Talk
@@ -85,7 +85,7 @@ public static class TalkEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Talk/{id}", async (int id, EventsDTO.Talk input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Talks/{id}", async (int id, EventsDTO.Talk input, ApplicationDbContext db) =>
         {
             // Check if exist
             var talk = await db.Talk.SingleOrDefaultAsync(t => t.Id == id);
@@ -125,7 +125,7 @@ public static class TalkEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Delete
-        routes.MapDelete("/api/Talk/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Talks/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Talk.SingleOrDefaultAsync(t => t.Id == id) is Data.Talk talk)
@@ -143,7 +143,7 @@ public static class TalkEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Update many-to-many with Guest
-        routes.MapPut("api/Talk/{id}/Guest", async (int id, List<int> inputGuestIds, ApplicationDbContext db) =>
+        routes.MapPut("api/Talks/{id}/Guests", async (int id, List<int> inputGuestIds, ApplicationDbContext db) =>
         {
             // Check if Talk exist
             var talk = await db.Talk
@@ -236,14 +236,14 @@ public static class TalkEndpoints
             return Results.NoContent();
         })
         .WithTags("Talk")
-        .WithName("UpdateTalkGuest")
+        .WithName("UpdateGuestsInTalks")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status409Conflict);
 
         // Update many-to-many with Organization
-        routes.MapPut("api/Talk/{id}/Org", async (int id, List<int> inputOrgIds, ApplicationDbContext db) =>
+        routes.MapPut("api/Talks/{id}/Organizations", async (int id, List<int> inputOrgIds, ApplicationDbContext db) =>
         {
             // Check if Talk exist
             var talk = await db.Talk
@@ -336,7 +336,7 @@ public static class TalkEndpoints
             return Results.NoContent();
         })
         .WithTags("Talk")
-        .WithName("UpdateTalkOrg")
+        .WithName("UpdateOrganizationsInTalks")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)

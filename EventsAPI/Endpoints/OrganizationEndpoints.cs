@@ -9,7 +9,7 @@ public static class OrganizationEndpoints
     public static void MapOrganizationEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Organization", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Organizations", async (ApplicationDbContext db) =>
         {
             return await db.Organization.AsNoTracking()
                         .Include(o => o.EventOrgs)
@@ -28,7 +28,7 @@ public static class OrganizationEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Organization/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Organizations/{id}", async (int id, ApplicationDbContext db) =>
         {
             return await db.Organization.AsNoTracking()
                         .Include(o => o.EventOrgs)
@@ -46,7 +46,7 @@ public static class OrganizationEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Organization/", async (EventsDTO.Organization input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Organizations/", async (EventsDTO.Organization input, ApplicationDbContext db) =>
         {
             // Check if Organization (corporatename) already exists
             var existingOrg = await db.Organization
@@ -79,7 +79,7 @@ public static class OrganizationEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Organization/{id}", async (int id, EventsDTO.Organization input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Organizations/{id}", async (int id, EventsDTO.Organization input, ApplicationDbContext db) =>
         {
             // Check if exist
             var organization = await db.Organization.SingleOrDefaultAsync(o => o.Id == id);
@@ -117,7 +117,7 @@ public static class OrganizationEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete
-        routes.MapDelete("/api/Organization/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Organizations/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Organization.SingleOrDefaultAsync(o => o.Id == id) is Data.Organization organization)

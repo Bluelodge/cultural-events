@@ -9,7 +9,7 @@ public static class GuestEndpoints
     public static void MapGuestEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Guest", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Guests", async (ApplicationDbContext db) =>
         {
             return await db.Guest.AsNoTracking()
                         .Include(g => g.EventGuests)
@@ -28,7 +28,7 @@ public static class GuestEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Guest/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Guests/{id}", async (int id, ApplicationDbContext db) =>
         {
             return await db.Guest.AsNoTracking()
                         .Include(g => g.EventGuests)
@@ -46,7 +46,7 @@ public static class GuestEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Guest/", async (EventsDTO.Guest input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Guests/", async (EventsDTO.Guest input, ApplicationDbContext db) =>
         {
             // Check if exist (composite key)
             var existingGuest = await db.Guest
@@ -83,7 +83,7 @@ public static class GuestEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Guest/{id}", async (int id, EventsDTO.Guest input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Guests/{id}", async (int id, EventsDTO.Guest input, ApplicationDbContext db) =>
         {
             // Check if exist 
             var guest = await db.Guest.SingleOrDefaultAsync(g => g.Id == id);
@@ -129,7 +129,7 @@ public static class GuestEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete
-        routes.MapDelete("/api/Guest/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Guests/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Guest.SingleOrDefaultAsync(g => g.Id == id) is Data.Guest guest)

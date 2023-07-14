@@ -9,7 +9,7 @@ public static class EventEndpoints
     public static void MapEventEndpoints(this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Event", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Events", async (ApplicationDbContext db) =>
         {
             return await db.Event.AsNoTracking()
                         .Include(e => e.EventGuests)
@@ -29,7 +29,7 @@ public static class EventEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Event/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Events/{id}", async (int id, ApplicationDbContext db) =>
         {
             return await db.Event.AsNoTracking()
                         .Include(e => e.EventGuests)
@@ -48,7 +48,7 @@ public static class EventEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Event/", async (EventsDTO.Event input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Events/", async (EventsDTO.Event input, ApplicationDbContext db) =>
         {
             // Check if exist
             var existingEvent = await db.Event
@@ -117,7 +117,7 @@ public static class EventEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete
-        routes.MapDelete("/api/Event/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Events/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Event.SingleOrDefaultAsync(e => e.Id == id) is Data.Event events)

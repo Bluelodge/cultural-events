@@ -9,7 +9,7 @@ public static class AttendeeEndpoints
     public static void MapAttendeeEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get for each attendee including many-to-many
-        routes.MapGet("/api/Attendee/{username}", async (string username, ApplicationDbContext db) =>
+        routes.MapGet("/api/Attendees/{username}", async (string username, ApplicationDbContext db) =>
         {
             return await db.Attendee
                         .Include(a => a.EventAttendees)
@@ -22,12 +22,12 @@ public static class AttendeeEndpoints
                 : Results.NotFound();
         })
         .WithTags("Attendee")
-        .WithName("GetAttendee")
+        .WithName("GetAttendeeByUsername")
         .Produces<AttendeeResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Attendee/", async (EventsDTO.Attendee input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Attendees/", async (EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
             // Check if Attendee (username or email) already exist
             var existingAttendee = await db.Attendee
@@ -50,7 +50,7 @@ public static class AttendeeEndpoints
                 db.Attendee.Add(attendee);
                 await db.SaveChangesAsync();
 
-                return Results.Created($"/api/Attendee/{attendee.Id}", attendee);
+                return Results.Created($"/api/Attendees/{attendee.Id}", attendee);
             }
             else
             {
@@ -64,7 +64,7 @@ public static class AttendeeEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Attendee/{id}", async (int id, EventsDTO.Attendee input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Attendees/{id}", async (int id, EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
             // Check if exists
             var attendee = await db.Attendee.SingleOrDefaultAsync(a => a.Id == id);
@@ -110,7 +110,7 @@ public static class AttendeeEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete
-        routes.MapDelete("/api/Attendee/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Attendees/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Attendee.SingleOrDefaultAsync(a => a.Id == id) is Data.Attendee attendee)
@@ -128,7 +128,7 @@ public static class AttendeeEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Get all Talks from Attendee
-        routes.MapGet("/api/Attendee/{username}/Talks", async (string username, ApplicationDbContext db) =>
+        routes.MapGet("/api/Attendees/{username}/Talks", async (string username, ApplicationDbContext db) =>
         {
             var talks = await db.Talk
                         .AsNoTracking()
@@ -147,7 +147,7 @@ public static class AttendeeEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Add many-to-many with Talk
-        routes.MapPost("/api/Attendee/{username}/Talk/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        routes.MapPost("/api/Attendees/{username}/Talks/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
         {
             // Check if Attendee exist
             var attendee = await db.Attendee
@@ -195,7 +195,7 @@ public static class AttendeeEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete many-to-many with Talk
-        routes.MapDelete("/api/Attendee/{username}/Talk/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Attendees/{username}/Talks/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
         {
             // Check if Attendee exists
             var attendee = await db.Attendee

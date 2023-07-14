@@ -9,7 +9,7 @@ public static class CategoryEndpoints
     public static void MapCategoryEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all
-        routes.MapGet("/api/Category", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Categories", async (ApplicationDbContext db) =>
         {
             return await db.Category.AsNoTracking()
                         .Include(c => c.Talks)
@@ -20,12 +20,12 @@ public static class CategoryEndpoints
                 : Results.NotFound();
         })
         .WithTags("Category")
-        .WithName("GetAllCategorys")
+        .WithName("GetAllCategories")
         .Produces<List<CategoryResponse>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         // Get by id
-        routes.MapGet("/api/Category/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Categories/{id}", async (int id, ApplicationDbContext db) =>
         {
             return await db.Category.AsNoTracking()
                         .Include(c => c.Talks)
@@ -40,7 +40,7 @@ public static class CategoryEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // Create
-        routes.MapPost("/api/Category/", async (EventsDTO.Category input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Categories/", async (EventsDTO.Category input, ApplicationDbContext db) =>
         {
             // Check if exist
             var existingCategory = await db.Category
@@ -73,7 +73,7 @@ public static class CategoryEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Update
-        routes.MapPut("/api/Category/{id}", async (int id, EventsDTO.Category input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Categories/{id}", async (int id, EventsDTO.Category input, ApplicationDbContext db) =>
         {
             // Check if exist
             var category = await db.Category.SingleOrDefaultAsync(c => c.Id == id);
@@ -109,7 +109,7 @@ public static class CategoryEndpoints
         .Produces(StatusCodes.Status409Conflict);
 
         // Delete
-        routes.MapDelete("/api/Category/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Categories/{id}", async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Category.SingleOrDefaultAsync(c => c.Id == id) is Data.Category category)
