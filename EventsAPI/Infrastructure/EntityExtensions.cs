@@ -11,13 +11,6 @@ public static class EntityExtensions
             FirstName = attendee.FirstName,
             LastName = attendee.LastName,
             EmailAddress = attendee.EmailAddress,
-            Events = attendee.EventAttendees?
-                .Select(ea => new EventsDTO.Event
-                {
-                    Id = ea.EventId,
-                    Title = ea.Event.Title
-                })
-                .ToList() ?? new(),
             Talks = attendee.TalkAttendees?
                 .Select(ta => new EventsDTO.Talk
                 {

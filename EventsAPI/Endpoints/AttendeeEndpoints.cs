@@ -12,8 +12,6 @@ public static class AttendeeEndpoints
         routes.MapGet("/api/Attendees/{username}", async (string username, ApplicationDbContext db) =>
         {
             return await db.Attendee
-                        .Include(a => a.EventAttendees)
-                        .ThenInclude(ea=> ea.Event)
                         .Include(a => a.TalkAttendees)
                         .ThenInclude(ta => ta.Talk)
                         .SingleOrDefaultAsync(a => a.UserName == username)
