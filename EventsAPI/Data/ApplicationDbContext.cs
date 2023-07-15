@@ -26,8 +26,10 @@ public class ApplicationDbContext : DbContext
         // Create on unique Corporate name
         modelBuilder.Entity<Organization>().HasIndex(o => o.CorporateName).IsUnique();
 
-        // Create on unique Title / Set null on Category delete / Delete on Event delete
-        modelBuilder.Entity<Talk>().HasIndex(t => t.Title).IsUnique();
+        // Create on unique Title and EventId
+        modelBuilder.Entity<Talk>().HasIndex(t => new { t.Title, t.EventId }).IsUnique();
+        
+        // Set null on Category delete / Delete on Event delete
         modelBuilder.Entity<Talk>().HasOne(t => t.Category)
                                     .WithMany(Category => Category.Talks)
                                     .HasForeignKey("CategoryId")

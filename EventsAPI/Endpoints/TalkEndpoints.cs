@@ -52,9 +52,10 @@ public static class TalkEndpoints
         // Create
         routes.MapPost("/api/Talks/", async (EventsDTO.Talk input, ApplicationDbContext db) =>
         {
-            // Check if exist
+            // Check if exist and belongs to same Event
             var existingTalk = await db.Talk
-                        .Where(t => t.Title == input.Title)
+                        .Where(t => t.Title == input.Title &&
+                                    t.EventId == input.EventId)
                         .FirstOrDefaultAsync();
 
             if (existingTalk == null)
@@ -76,7 +77,7 @@ public static class TalkEndpoints
             }
             else
             {
-                return Results.Conflict(new { Error = $"Talk with title '{input.Title}' already exists" });
+                return Results.Conflict(new { Error = $"Talk with title '{input.Title}' already exists in event '{input.EventId}'" });
             }
         })
         .WithTags("Talk")
@@ -95,20 +96,25 @@ public static class TalkEndpoints
                 return Results.NotFound(new { Talk = id });
             }
 
-            // Check if Title is duplicated ignoring own id
+            // Check if Title and EventId are duplicates (composite key)
+            var title = input.Title ?? talk.Title;
+            var evt = input.EventId ?? talk.EventId;
+
+            // Check if Title is duplicated inside current Event ignoring own id
             var duplicatedTalk = await db.Talk
-                        .Where(t => t.Title == input.Title &&
+                        .Where(t => t.Title == title &&
+                                    t.EventId == evt &&
                                     t.Id != id)
                         .FirstOrDefaultAsync();
 
             if (duplicatedTalk == null)
             {
-                talk.Title = input.Title ?? talk.Title;
+                talk.Title = title;
                 talk.Summarize = input.Summarize ?? talk.Summarize;
                 talk.StartTime = input.StartTime ?? talk.StartTime;
                 talk.EndTime = input.EndTime ?? talk.EndTime;
                 talk.CategoryId = input.CategoryId ?? talk.CategoryId;
-                talk.EventId = input.EventId ?? talk.EventId;
+                talk.EventId = evt;
 
                 await db.SaveChangesAsync();
 
@@ -116,7 +122,7 @@ public static class TalkEndpoints
             }
             else
             {
-                return Results.Conflict(new { Error = $"Another Talk already has the title '{input.Title}'" });
+                return Results.Conflict(new { Error = $"Another Talk already has the title '{title}' in event '{evt}'" });
             }
         })
         .WithTags("Talk")
