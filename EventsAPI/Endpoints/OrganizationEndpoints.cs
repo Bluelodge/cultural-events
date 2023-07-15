@@ -11,9 +11,8 @@ public static class OrganizationEndpoints
         // Get all including many-to-many
         routes.MapGet("/api/Organizations", async (ApplicationDbContext db) =>
         {
-            return await db.Organization.AsNoTracking()
-                        .Include(o => o.EventOrgs)
-                        .ThenInclude(eo => eo.Event)
+            return await db.Organization
+                        .AsNoTracking()
                         .Include(o => o.TalkOrgs)
                         .ThenInclude(to => to.Talk)
                         .Select(m => m.MapOrganizationResponse())
@@ -30,9 +29,8 @@ public static class OrganizationEndpoints
         // Get by id including many-to-many
         routes.MapGet("/api/Organizations/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Organization.AsNoTracking()
-                        .Include(o => o.EventOrgs)
-                        .ThenInclude(eo => eo.Event)
+            return await db.Organization
+                        .AsNoTracking()
                         .Include(o => o.TalkOrgs)
                         .ThenInclude(to => to.Talk)
                         .SingleOrDefaultAsync(o => o.Id == id)

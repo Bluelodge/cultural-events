@@ -13,8 +13,6 @@ public static class EventEndpoints
         {
             return await db.Event
                         .AsNoTracking()
-                        .Include(e => e.EventOrgs)
-                        .ThenInclude(eo => eo.Organization)
                         .Include(e => e.Talks)
                         .Select(m => m.MapEventResponse())
                         .ToListAsync()
@@ -32,8 +30,6 @@ public static class EventEndpoints
         {
             return await db.Event
                         .AsNoTracking()
-                        .Include(e => e.EventOrgs)
-                        .ThenInclude(eo => eo.Organization)
                         .Include(e => e.Talks)
                         .SingleOrDefaultAsync(e => e.Id == id)
                 is Data.Event model
