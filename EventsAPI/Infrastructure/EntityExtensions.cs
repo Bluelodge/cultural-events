@@ -41,13 +41,6 @@ public static class EntityExtensions
         {
             Id = events.Id,
             Title = events.Title,
-            Guests = events.EventGuests?
-                .Select(eg => new EventsDTO.Guest
-                {
-                    Id = eg.GuestId,
-                    FullName = eg.Guest.FullName
-                })
-                .ToList() ?? new(),
             Organizations = events.EventOrgs?
                 .Select(eo => new EventsDTO.Organization
                 {
@@ -74,13 +67,6 @@ public static class EntityExtensions
             Bio = guest.Bio,
             Social = guest.Social,
             WebSite = guest.WebSite,
-            Events = guest.EventGuests?
-                .Select(eg => new EventsDTO.Event
-                {
-                    Id = eg.EventId,
-                    Title = eg.Event.Title
-                })
-                .ToList() ?? new(),
             Talks = guest.TalkGuests?
                 .Select(gt => new EventsDTO.Talk
                 {

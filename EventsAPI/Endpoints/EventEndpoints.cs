@@ -11,9 +11,8 @@ public static class EventEndpoints
         // Get all including many-to-many
         routes.MapGet("/api/Events", async (ApplicationDbContext db) =>
         {
-            return await db.Event.AsNoTracking()
-                        .Include(e => e.EventGuests)
-                        .ThenInclude(eg => eg.Guest)
+            return await db.Event
+                        .AsNoTracking()
                         .Include(e => e.EventOrgs)
                         .ThenInclude(eo => eo.Organization)
                         .Include(e => e.Talks)
@@ -31,9 +30,8 @@ public static class EventEndpoints
         // Get by id including many-to-many
         routes.MapGet("/api/Events/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Event.AsNoTracking()
-                        .Include(e => e.EventGuests)
-                        .ThenInclude(eg => eg.Guest)
+            return await db.Event
+                        .AsNoTracking()
                         .Include(e => e.EventOrgs)
                         .ThenInclude(eo => eo.Organization)
                         .Include(e => e.Talks)

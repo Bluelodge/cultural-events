@@ -3,7 +3,6 @@
 public class Event : EventsDTO.Event
 {
     // References Many-to-Many
-    public virtual ICollection<EventGuest> EventGuests { get; set; } = null!;
     public virtual ICollection<EventOrg> EventOrgs { get; set; } = null!;
 
     // One-to-Many (Parent - Collection navigation)

@@ -11,9 +11,8 @@ public static class GuestEndpoints
         // Get all including many-to-many
         routes.MapGet("/api/Guests", async (ApplicationDbContext db) =>
         {
-            return await db.Guest.AsNoTracking()
-                        .Include(g => g.EventGuests)
-                        .ThenInclude(eg => eg.Event)
+            return await db.Guest
+                        .AsNoTracking()
                         .Include(g=> g.TalkGuests)
                         .ThenInclude(tg => tg.Talk)
                         .Select(m => m.MapGuestResponse())
@@ -30,9 +29,8 @@ public static class GuestEndpoints
         // Get by id including many-to-many
         routes.MapGet("/api/Guests/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Guest.AsNoTracking()
-                        .Include(g => g.EventGuests)
-                        .ThenInclude(eg => eg.Event)
+            return await db.Guest
+                        .AsNoTracking()
                         .Include(g => g.TalkGuests)
                         .ThenInclude(tg => tg.Talk)
                         .SingleOrDefaultAsync(g => g.Id == id)
