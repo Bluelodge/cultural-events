@@ -56,7 +56,6 @@ public static class AttendeeEndpoints
                     new { Error = $"Attendee with username '{input.UserName}' or email '{input.EmailAddress}' already exists"}
                 );
             }
-
         })
         .WithTags("Attendee")
         .WithName("CreateAttendee")
@@ -101,7 +100,6 @@ public static class AttendeeEndpoints
             {
                 return Results.Conflict(new { Error = $"Another Attendee already has the username '{input.UserName}' or email '{input.EmailAddress}'" });
             }
-
         })
         .WithTags("Attendee")
         .WithName("UpdateAttendee")
@@ -227,6 +225,5 @@ public static class AttendeeEndpoints
         .WithName("RemoveTalkFromAttendee")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
-
     }
 }

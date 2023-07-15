@@ -73,7 +73,6 @@ public static class GuestEndpoints
             {
                 return Results.Conflict(new { Error = $"Guest with name '{input.FullName}' and position '{input.Position}' already exists" });
             }
-
         })
         .WithTags("Guest")
         .WithName("CreateGuest")
@@ -118,7 +117,6 @@ public static class GuestEndpoints
             {
                 return Results.Conflict(new { Error = $"Another Guest already has the name '{input.FullName}' and position '{input.Position}'" });
             }
-                
         })
         .WithTags("Guest")
         .WithName("UpdateGuest")

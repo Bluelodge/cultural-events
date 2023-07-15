@@ -11,7 +11,8 @@ public static class CategoryEndpoints
         // Get all
         routes.MapGet("/api/Categories", async (ApplicationDbContext db) =>
         {
-            return await db.Category.AsNoTracking()
+            return await db.Category
+                        .AsNoTracking()
                         .Include(c => c.Talks)
                         .Select(m => m.MapCategoryResponse())
                         .ToListAsync()
@@ -27,7 +28,8 @@ public static class CategoryEndpoints
         // Get by id
         routes.MapGet("/api/Categories/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Category.AsNoTracking()
+            return await db.Category
+                        .AsNoTracking()
                         .Include(c => c.Talks)
                         .SingleOrDefaultAsync(c => c.Id == id)
             is Data.Category model

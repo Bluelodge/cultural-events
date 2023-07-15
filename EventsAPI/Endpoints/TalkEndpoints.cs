@@ -11,7 +11,8 @@ public static class TalkEndpoints
         // Get all including many-to-many
         routes.MapGet("/api/Talks", async (ApplicationDbContext db) =>
         {
-            return await db.Talk.AsNoTracking()
+            return await db.Talk
+                        .AsNoTracking()
                         .Include(t => t.Category)
                         .Include(t => t.Event)
                         .Include(t => t.TalkGuests)
@@ -32,7 +33,8 @@ public static class TalkEndpoints
         // Get by id including many-to-many
         routes.MapGet("/api/Talks/{id}", async (int id, ApplicationDbContext db) =>
         {
-            return await db.Talk.AsNoTracking()
+            return await db.Talk
+                        .AsNoTracking()
                         .Include(t => t.Category)
                         .Include(t => t.Event)
                         .Include(t => t.TalkGuests)

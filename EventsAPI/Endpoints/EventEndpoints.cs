@@ -102,7 +102,6 @@ public static class EventEndpoints
             {
                 return Results.Conflict(new { Error = $"Another Event already has the title '{input.Title}'" });
             }
-            
         })
         .WithTags("Event")
         .WithName("UpdateEvent")
