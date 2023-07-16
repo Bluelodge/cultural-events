@@ -16,6 +16,9 @@ services.AddSwaggerGen(options =>
 {
     // Avoids conflict between data models
     options.CustomSchemaIds(type => type.ToString());
+
+    // API documentation
+    options.EnableAnnotations();
 });
 
 var app = builder.Build();

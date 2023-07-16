@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
 
@@ -9,7 +10,14 @@ public static class CategoryEndpoints
     public static void MapCategoryEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all
-        routes.MapGet("/api/Categories", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Categories",
+            [SwaggerOperation(
+                Summary = "Get Categories",
+                Description = "Returns all Categories"
+            )]
+            [SwaggerResponse(200, "Categories successfully returned")]
+            [SwaggerResponse(404, "Categories don't exist")]
+        async (ApplicationDbContext db) =>
         {
             return await db.Category
                         .AsNoTracking()
@@ -22,11 +30,17 @@ public static class CategoryEndpoints
         })
         .WithTags("Category")
         .WithName("GetAllCategories")
-        .Produces<List<CategoryResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<List<CategoryResponse>>(StatusCodes.Status200OK);
 
         // Get by id
-        routes.MapGet("/api/Categories/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Categories/{id}",
+            [SwaggerOperation(
+                Summary = "Get Category by id",
+                Description = "Returns a Category as per id"
+            )]
+            [SwaggerResponse(200, "Category successfully returned")]
+            [SwaggerResponse(404, "Category doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             return await db.Category
                         .AsNoTracking()
@@ -38,11 +52,17 @@ public static class CategoryEndpoints
         })
         .WithTags("Category")
         .WithName("GetCategoryById")
-        .Produces<CategoryResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<CategoryResponse>(StatusCodes.Status200OK);
 
         // Create
-        routes.MapPost("/api/Categories/", async (EventsDTO.Category input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Categories/",
+            [SwaggerOperation(
+                Summary = "Create single Category",
+                Description = "Adds new Attendee with unique name"
+            )]
+            [SwaggerResponse(201, "Category successfully created")]
+            [SwaggerResponse(409, "Can't create Category due to conflicts with unique key")]
+        async (EventsDTO.Category input, ApplicationDbContext db) =>
         {
             // Check if exist
             var existingCategory = await db.Category
@@ -69,11 +89,18 @@ public static class CategoryEndpoints
         })
         .WithTags("Category")
         .WithName("CreateCategory")
-        .Produces<CategoryResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<CategoryResponse>(StatusCodes.Status201Created);
 
         // Update
-        routes.MapPut("/api/Categories/{id}", async (int id, EventsDTO.Category input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Categories/{id}",
+            [SwaggerOperation(
+                Summary = "Update single Category by Id",
+                Description = "Updates Category info as per id"
+            )]
+            [SwaggerResponse(204, "Category successfully updated")]
+            [SwaggerResponse(404, "Category doesn't exist")]
+            [SwaggerResponse(409, "Can't update Category due to conflicts with unique key")]
+        async (int id, EventsDTO.Category input, ApplicationDbContext db) =>
         {
             // Check if exist
             var category = await db.Category.SingleOrDefaultAsync(c => c.Id == id);
@@ -103,27 +130,29 @@ public static class CategoryEndpoints
             }
         })
         .WithTags("Category")
-        .WithName("UpdateCategory")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateCategory");
 
         // Delete
-        routes.MapDelete("/api/Categories/{id}", async (int id, ApplicationDbContext db) =>
-        {
-            // Check if exist
-            if (await db.Category.SingleOrDefaultAsync(c => c.Id == id) is Data.Category category)
+        routes.MapDelete("/api/Categories/{id}",
+            [SwaggerOperation(
+                Summary = "Remove Category by Id",
+                Description = "Deletes Category as per id"
+            )]
+            [SwaggerResponse(200, "Category successfully deleted")]
+            [SwaggerResponse(404, "Category doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
             {
-                db.Category.Remove(category);
-                await db.SaveChangesAsync();
-                return Results.Ok();
-            }
+                // Check if exist
+                if (await db.Category.SingleOrDefaultAsync(c => c.Id == id) is Data.Category category)
+                {
+                    db.Category.Remove(category);
+                    await db.SaveChangesAsync();
+                    return Results.Ok();
+                }
 
-            return Results.NotFound(new { Category = id });
-        })
+                return Results.NotFound(new { Category = id });
+            })
         .WithTags("Category")
-        .WithName("DeleteCategory")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("DeleteCategory");
     }
 }

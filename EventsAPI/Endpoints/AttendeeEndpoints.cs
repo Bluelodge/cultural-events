@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
 
@@ -9,7 +10,14 @@ public static class AttendeeEndpoints
     public static void MapAttendeeEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get for each attendee including many-to-many
-        routes.MapGet("/api/Attendees/{username}", async (string username, ApplicationDbContext db) =>
+        routes.MapGet("/api/Attendees/{username}",
+            [SwaggerOperation(
+                Summary = "Get Attendee by username",
+                Description = "Returns an Attendee as per username"
+            )]
+            [SwaggerResponse(200, "Attendee successfully returned")]
+            [SwaggerResponse(404, "Attendee doesn't exist")]
+        async (string username, ApplicationDbContext db) =>
         {
             return await db.Attendee
                         .Include(a => a.TalkAttendees)
@@ -21,11 +29,17 @@ public static class AttendeeEndpoints
         })
         .WithTags("Attendee")
         .WithName("GetAttendeeByUsername")
-        .Produces<AttendeeResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<AttendeeResponse>(StatusCodes.Status200OK);
 
         // Create
-        routes.MapPost("/api/Attendees/", async (EventsDTO.Attendee input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Attendees/",
+            [SwaggerOperation(
+                Summary = "Create single Attendee",
+                Description = "Adds new Attendee with unique username and email"
+            )]
+            [SwaggerResponse(201, "Attendee successfully created")]
+            [SwaggerResponse(409, "Can't create Attendee due to conflicts with unique key")]
+        async (EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
             // Check if Attendee (username or email) already exist
             var existingAttendee = await db.Attendee
@@ -53,17 +67,24 @@ public static class AttendeeEndpoints
             else
             {
                 return Results.Conflict(
-                    new { Error = $"Attendee with username '{input.UserName}' or email '{input.EmailAddress}' already exists"}
+                    new { Error = $"Attendee with username '{input.UserName}' or email '{input.EmailAddress}' already exists" }
                 );
             }
         })
         .WithTags("Attendee")
         .WithName("CreateAttendee")
-        .Produces<AttendeeResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<AttendeeResponse>(StatusCodes.Status201Created);
 
         // Update
-        routes.MapPut("/api/Attendees/{id}", async (int id, EventsDTO.Attendee input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Attendees/{id}",
+            [SwaggerOperation(
+                Summary = "Update single Attendee by Id",
+                Description = "Updates Attendee info as per id"
+            )]
+            [SwaggerResponse(204, "Attendee successfully updated")]
+            [SwaggerResponse(404, "Attendee doesn't exist")]
+            [SwaggerResponse(409, "Can't update Attendee due to conflicts with unique key")]
+        async (int id, EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
             // Check if exists
             var attendee = await db.Attendee.SingleOrDefaultAsync(a => a.Id == id);
@@ -102,13 +123,17 @@ public static class AttendeeEndpoints
             }
         })
         .WithTags("Attendee")
-        .WithName("UpdateAttendee")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateAttendee");
 
         // Delete
-        routes.MapDelete("/api/Attendees/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Attendees/{id}",
+            [SwaggerOperation(
+                Summary = "Remove Attendee by Id",
+                Description = "Deletes Attendee and all related info as per id"
+            )]
+            [SwaggerResponse(200, "Attendee successfully deleted")]
+            [SwaggerResponse(404, "Attendee doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Attendee.SingleOrDefaultAsync(a => a.Id == id) is Data.Attendee attendee)
@@ -121,12 +146,17 @@ public static class AttendeeEndpoints
             return Results.NotFound(new { Attendee = id });
         })
         .WithTags("Attendee")
-        .WithName("DeleteAttendee")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("DeleteAttendee");
 
         // Get all Talks from Attendee
-        routes.MapGet("/api/Attendees/{username}/Talks", async (string username, ApplicationDbContext db) =>
+        routes.MapGet("/api/Attendees/{username}/Talks",
+            [SwaggerOperation(
+                Summary = "Get Talks from single Attendee by username",
+                Description = "Returns a list of Talks in wich Attendee is subscribed to as per username"
+            )]
+            [SwaggerResponse(200, "Attendee's list of Talks successfully returned")]
+            [SwaggerResponse(404, "Attendee doesn't exist")]
+        async (string username, ApplicationDbContext db) =>
         {
             var talks = await db.Talk
                         .AsNoTracking()
@@ -141,11 +171,19 @@ public static class AttendeeEndpoints
         })
         .WithTags("Attendee")
         .WithName("GetAllTalksFromAttendee")
-        .Produces<List<TalkResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<List<TalkResponse>>(StatusCodes.Status200OK);
 
         // Add many-to-many with Talk
-        routes.MapPost("/api/Attendees/{username}/Talks/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        routes.MapPost(
+            "/api/Attendees/{username}/Talks/{talkId}",
+            [SwaggerOperation(
+                Summary = "Create single relation Talk-Attendee",
+                Description = "Adds new subscription to Talk from Attendee as per Attendee's username and Talk's id"
+            )]
+            [SwaggerResponse(201, "Relation successfully created")]
+            [SwaggerResponse(404, "Attendee or relation doesn't exist")]
+            [SwaggerResponse(409, "Can't create relation due to conflicts in unique key")]
+        async (string username, int talkId, ApplicationDbContext db) =>
         {
             // Check if Attendee exist
             var attendee = await db.Attendee
@@ -188,12 +226,17 @@ public static class AttendeeEndpoints
         })
         .WithTags("Attendee")
         .WithName("AddTalkToAttendee")
-        .Produces<AttendeeResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<AttendeeResponse>(StatusCodes.Status201Created);
 
         // Delete many-to-many with Talk
-        routes.MapDelete("/api/Attendees/{username}/Talks/{talkId}", async (string username, int talkId, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Attendees/{username}/Talks/{talkId}",
+            [SwaggerOperation(
+                Summary = "Remove single relation Talk-Attendee",
+                Description = "Deletes subscription to Talk from Attendee as per Attendee's username and Talk's id"
+            )]
+            [SwaggerResponse(200, "Relation successfully deleted")]
+            [SwaggerResponse(404, "Attendee or relation doesn't exist")]
+        async (string username, int talkId, ApplicationDbContext db) =>
         {
             // Check if Attendee exists
             var attendee = await db.Attendee
@@ -222,8 +265,6 @@ public static class AttendeeEndpoints
             return Results.NotFound();
         })
         .WithTags("Attendee")
-        .WithName("RemoveTalkFromAttendee")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("RemoveTalkFromAttendee");
     }
 }

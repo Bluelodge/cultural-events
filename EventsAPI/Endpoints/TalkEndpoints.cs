@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
 
@@ -9,7 +10,14 @@ public static class TalkEndpoints
     public static void MapTalkEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Talks", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Talks",
+            [SwaggerOperation(
+                Summary = "Get Talks",
+                Description = "Returns all Talks"
+            )]
+            [SwaggerResponse(200, "Talks successfully returned")]
+            [SwaggerResponse(404, "Talks don't exist")]
+        async (ApplicationDbContext db) =>
         {
             return await db.Talk
                         .AsNoTracking()
@@ -27,11 +35,17 @@ public static class TalkEndpoints
         })
         .WithTags("Talk")
         .WithName("GetAllTalks")
-        .Produces<List<TalkResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<List<TalkResponse>>(StatusCodes.Status200OK);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Talks/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Talks/{id}",
+            [SwaggerOperation(
+                Summary = "Get Talk by id",
+                Description = "Returns a Talk as per id"
+            )]
+            [SwaggerResponse(200, "Talk successfully returned")]
+            [SwaggerResponse(404, "Talk doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             return await db.Talk
                         .AsNoTracking()
@@ -48,11 +62,17 @@ public static class TalkEndpoints
         })
         .WithTags("Talk")
         .WithName("GetTalkById")
-        .Produces<TalkResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<TalkResponse>(StatusCodes.Status200OK);
 
         // Create
-        routes.MapPost("/api/Talks/", async (EventsDTO.Talk input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Talks/",
+            [SwaggerOperation(
+                Summary = "Create single Talk",
+                Description = "Adds new Talk with unique Title and EventId"
+            )]
+            [SwaggerResponse(201, "Talk successfully created")]
+            [SwaggerResponse(409, "Can't create Talk due to conflicts with unique key")]
+        async (EventsDTO.Talk input, ApplicationDbContext db) =>
         {
             // Check if exist and belongs to same Event
             var existingTalk = await db.Talk
@@ -84,11 +104,18 @@ public static class TalkEndpoints
         })
         .WithTags("Talk")
         .WithName("CreateTalk")
-        .Produces<TalkResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<TalkResponse>(StatusCodes.Status201Created);
 
         // Update
-        routes.MapPut("/api/Talks/{id}", async (int id, EventsDTO.Talk input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Talks/{id}",
+            [SwaggerOperation(
+                Summary = "Update single Talk by Id",
+                Description = "Updates Talk info as per id"
+            )]
+            [SwaggerResponse(204, "Talk successfully updated")]
+            [SwaggerResponse(404, "Talk doesn't exist")]
+            [SwaggerResponse(409, "Can't update Talk due to conflicts with unique key")]
+        async (int id, EventsDTO.Talk input, ApplicationDbContext db) =>
         {
             // Check if exist
             var talk = await db.Talk.SingleOrDefaultAsync(t => t.Id == id);
@@ -128,12 +155,17 @@ public static class TalkEndpoints
             }
         })
         .WithTags("Talk")
-        .WithName("UpdateTalk")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("UpdateTalk");
 
         // Delete
-        routes.MapDelete("/api/Talks/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Talks/{id}",
+            [SwaggerOperation(
+                Summary = "Remove Talk by Id",
+                Description = "Deletes Talk as per id"
+            )]
+            [SwaggerResponse(200, "Talk successfully deleted")]
+            [SwaggerResponse(404, "Talk doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Talk.SingleOrDefaultAsync(t => t.Id == id) is Data.Talk talk)
@@ -146,12 +178,19 @@ public static class TalkEndpoints
             return Results.NotFound(new { Talk = id });
         })
         .WithTags("Talk")
-        .WithName("DeleteTalk")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("DeleteTalk");
 
         // Update many-to-many with Guest
-        routes.MapPut("api/Talks/{id}/Guests", async (int id, List<int> inputGuestIds, ApplicationDbContext db) =>
+        routes.MapPut("api/Talks/{id}/Guests",
+            [SwaggerOperation(
+                Summary = "Update relation Talk-Guest by Id",
+                Description = "Updates Talk-Guest relations (creates new and deletes existing) as per Talk's Id and a list of Guest's Id"
+            )]
+            [SwaggerResponse(200, "Request recieved, no changes applied")]
+            [SwaggerResponse(204, "Relations successfully updated")]
+            [SwaggerResponse(404, "Talk or Guest don't exist")]
+            [SwaggerResponse(409, "Can't update relations due to conflicts with unique key")]
+        async (int id, List<int> inputGuestIds, ApplicationDbContext db) =>
         {
             // Check if Talk exist
             var talk = await db.Talk
@@ -244,14 +283,19 @@ public static class TalkEndpoints
             return Results.NoContent();
         })
         .WithTags("Talk")
-        .WithName("UpdateGuestsInTalks")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateGuestsInTalks");
 
         // Update many-to-many with Organization
-        routes.MapPut("api/Talks/{id}/Organizations", async (int id, List<int> inputOrgIds, ApplicationDbContext db) =>
+        routes.MapPut("api/Talks/{id}/Organizations",
+            [SwaggerOperation(
+                Summary = "Update relation Talk-Organization by Id",
+                Description = "Updates Talk-Organization relations (creates new and deletes existing) as per Talk's Id and a list of Organization's Id"
+            )]
+            [SwaggerResponse(200, "Request recieved, no changes applied")]
+            [SwaggerResponse(204, "Relations successfully updated")]
+            [SwaggerResponse(404, "Talk or Organization don't exist")]
+            [SwaggerResponse(409, "Can't update relations due to conflicts with unique key")]
+        async (int id, List<int> inputOrgIds, ApplicationDbContext db) =>
         {
             // Check if Talk exist
             var talk = await db.Talk
@@ -344,10 +388,6 @@ public static class TalkEndpoints
             return Results.NoContent();
         })
         .WithTags("Talk")
-        .WithName("UpdateOrganizationsInTalks")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateOrganizationsInTalks");
     }
 }

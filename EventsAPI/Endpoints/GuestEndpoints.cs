@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
 
@@ -9,7 +10,14 @@ public static class GuestEndpoints
     public static void MapGuestEndpoints (this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Guests", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Guests",
+            [SwaggerOperation(
+                Summary = "Get Guests",
+                Description = "Returns all Guests"
+            )]
+            [SwaggerResponse(200, "Guests successfully returned")]
+            [SwaggerResponse(404, "Guests don't exist")]
+        async (ApplicationDbContext db) =>
         {
             return await db.Guest
                         .AsNoTracking()
@@ -23,11 +31,17 @@ public static class GuestEndpoints
         })
         .WithTags("Guest")
         .WithName("GetAllGuests")
-        .Produces<List<GuestResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<List<GuestResponse>>(StatusCodes.Status200OK);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Guests/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapGet("/api/Guests/{id}",
+            [SwaggerOperation(
+                Summary = "Get Guest by id",
+                Description = "Returns a Guest as per id"
+            )]
+            [SwaggerResponse(200, "Guest successfully returned")]
+            [SwaggerResponse(404, "Guest doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             return await db.Guest
                         .AsNoTracking()
@@ -40,11 +54,17 @@ public static class GuestEndpoints
         })
         .WithTags("Guest")
         .WithName("GetGuestById")
-        .Produces<GuestResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<GuestResponse>(StatusCodes.Status200OK);
 
         // Create
-        routes.MapPost("/api/Guests/", async (EventsDTO.Guest input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Guests/",
+            [SwaggerOperation(
+                Summary = "Create single Guest",
+                Description = "Adds new Guest with unique fullname"
+            )]
+            [SwaggerResponse(201, "Guest successfully created")]
+            [SwaggerResponse(409, "Can't create Guest due to conflicts with unique key")]
+        async (EventsDTO.Guest input, ApplicationDbContext db) =>
         {
             // Check if exist (composite key)
             var existingGuest = await db.Guest
@@ -76,11 +96,18 @@ public static class GuestEndpoints
         })
         .WithTags("Guest")
         .WithName("CreateGuest")
-        .Produces<GuestResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<GuestResponse>(StatusCodes.Status201Created);
 
         // Update
-        routes.MapPut("/api/Guests/{id}", async (int id, EventsDTO.Guest input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Guests/{id}",
+            [SwaggerOperation(
+                Summary = "Update single Guest by Id",
+                Description = "Updates Guest info as per id"
+            )]
+            [SwaggerResponse(204, "Guest successfully updated")]
+            [SwaggerResponse(404, "Guest doesn't exist")]
+            [SwaggerResponse(409, "Can't update Guest due to conflicts with unique key")]
+        async (int id, EventsDTO.Guest input, ApplicationDbContext db) =>
         {
             // Check if exist 
             var guest = await db.Guest.SingleOrDefaultAsync(g => g.Id == id);
@@ -119,13 +146,17 @@ public static class GuestEndpoints
             }
         })
         .WithTags("Guest")
-        .WithName("UpdateGuest")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateGuest");
 
         // Delete
-        routes.MapDelete("/api/Guests/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Guests/{id}",
+            [SwaggerOperation(
+                Summary = "Remove Guest by Id",
+                Description = "Deletes Guest as per id"
+            )]
+            [SwaggerResponse(200, "Guest successfully deleted")]
+            [SwaggerResponse(404, "Guest doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Guest.SingleOrDefaultAsync(g => g.Id == id) is Data.Guest guest)
@@ -138,8 +169,6 @@ public static class GuestEndpoints
             return Results.NotFound(new { Guest = id });
         })
         .WithTags("Guest")
-        .WithName("DeleteGuest")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("DeleteGuest");
     }
 }

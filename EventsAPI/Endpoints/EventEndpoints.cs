@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
 
@@ -9,7 +10,14 @@ public static class EventEndpoints
     public static void MapEventEndpoints(this IEndpointRouteBuilder routes)
     {
         // Get all including many-to-many
-        routes.MapGet("/api/Events", async (ApplicationDbContext db) =>
+        routes.MapGet("/api/Events",
+            [SwaggerOperation(
+                Summary = "Get Events",
+                Description = "Returns all Events"
+            )]
+            [SwaggerResponse(200, "Events successfully returned")]
+            [SwaggerResponse(404, "Events don't exist")]
+        async (ApplicationDbContext db) =>
         {
             return await db.Event
                         .AsNoTracking()
@@ -22,27 +30,39 @@ public static class EventEndpoints
         })
         .WithTags("Event")
         .WithName("GetAllEvents")
-        .Produces<List<EventResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<List<EventResponse>>(StatusCodes.Status200OK);
 
         // Get by id including many-to-many
-        routes.MapGet("/api/Events/{id}", async (int id, ApplicationDbContext db) =>
-        {
-            return await db.Event
-                        .AsNoTracking()
-                        .Include(e => e.Talks)
-                        .SingleOrDefaultAsync(e => e.Id == id)
-                is Data.Event model
-                    ? Results.Ok(model.MapEventResponse())
-                    : Results.NotFound(new { Event = id });
-        })
+        routes.MapGet("/api/Events/{id}",
+            [SwaggerOperation(
+                Summary = "Get Event by id",
+                Description = "Returns an Event as per id"
+            )]
+            [SwaggerResponse(200, "Event successfully returned")]
+            [SwaggerResponse(404, "Event doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
+            {
+                return await db.Event
+                            .AsNoTracking()
+                            .Include(e => e.Talks)
+                            .SingleOrDefaultAsync(e => e.Id == id)
+                    is Data.Event model
+                        ? Results.Ok(model.MapEventResponse())
+                        : Results.NotFound(new { Event = id });
+            })
         .WithTags("Event")
         .WithName("GetEventById")
-        .Produces<EventResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<EventResponse>(StatusCodes.Status200OK);
 
         // Create
-        routes.MapPost("/api/Events/", async (EventsDTO.Event input, ApplicationDbContext db) =>
+        routes.MapPost("/api/Events/",
+            [SwaggerOperation(
+                Summary = "Create single Event",
+                Description = "Adds new Event with unique title"
+            )]
+            [SwaggerResponse(201, "Event successfully created")]
+            [SwaggerResponse(409, "Can't create Event due to conflicts with unique key")]
+        async (EventsDTO.Event input, ApplicationDbContext db) =>
         {
             // Check if exist
             var existingEvent = await db.Event
@@ -70,11 +90,18 @@ public static class EventEndpoints
         })
         .WithTags("Event")
         .WithName("CreateEvent")
-        .Produces<EventResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces<EventResponse>(StatusCodes.Status201Created);
 
         // Update
-        routes.MapPut("/api/Events/{id}", async (int id, EventsDTO.Event input, ApplicationDbContext db) =>
+        routes.MapPut("/api/Events/{id}",
+            [SwaggerOperation(
+                Summary = "Update single Event by Id",
+                Description = "Updates Event info as per id"
+            )]
+            [SwaggerResponse(204, "Event successfully updated")]
+            [SwaggerResponse(404, "Event doesn't exist")]
+            [SwaggerResponse(409, "Can't update Event due to conflicts with unique key")]
+        async (int id, EventsDTO.Event input, ApplicationDbContext db) =>
         {
             // Check if exist
             var events = await db.Event.SingleOrDefaultAsync(e => e.Id == id);
@@ -104,13 +131,17 @@ public static class EventEndpoints
             }
         })
         .WithTags("Event")
-        .WithName("UpdateEvent")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithName("UpdateEvent");
 
         // Delete
-        routes.MapDelete("/api/Events/{id}", async (int id, ApplicationDbContext db) =>
+        routes.MapDelete("/api/Events/{id}",
+            [SwaggerOperation(
+                Summary = "Remove Event by Id",
+                Description = "Deletes Event as per id"
+            )]
+            [SwaggerResponse(200, "Event successfully deleted")]
+            [SwaggerResponse(404, "Event doesn't exist")]
+        async (int id, ApplicationDbContext db) =>
         {
             // Check if exist
             if (await db.Event.SingleOrDefaultAsync(e => e.Id == id) is Data.Event events)
@@ -123,8 +154,6 @@ public static class EventEndpoints
             return Results.NotFound(new { Event = id });
         })
         .WithTags("Event")
-        .WithName("DeleteEvent")
-        .Produces(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("DeleteEvent");
     }
 }
