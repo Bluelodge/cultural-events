@@ -2,6 +2,7 @@ using EventsAPI.Data;
 using EventsAPI.Endpoints;
 using System.Reflection;
 using Swashbuckle.AspNetCore.Filters;
+using Microsoft.AspNetCore.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -26,6 +27,12 @@ services.AddSwaggerGen(options =>
 
 // Allow examples in responses 
 services.AddSwaggerExamplesFromAssemblies(Assembly.GetEntryAssembly());
+
+// Ignore null fields in responses
+services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+});
 
 var app = builder.Build();
 
