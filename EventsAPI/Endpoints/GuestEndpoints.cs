@@ -28,7 +28,7 @@ public static class GuestEndpoints
                         .ThenInclude(tg => tg.Talk)
                         .Select(m => m.MapGuestResponse())
                         .ToListAsync()
-            is List<GuestResponse> model
+            is List<GuestResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

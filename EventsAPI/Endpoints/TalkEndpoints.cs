@@ -32,7 +32,7 @@ public static class TalkEndpoints
                         .ThenInclude(to => to.Organization)
                         .Select(t => t.MapTalkResponse())
                         .ToListAsync()
-            is List<TalkResponse> model
+            is List<TalkResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

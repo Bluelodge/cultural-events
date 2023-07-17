@@ -27,7 +27,7 @@ public static class EventEndpoints
                         .Include(e => e.Talks)
                         .Select(m => m.MapEventResponse())
                         .ToListAsync()
-            is List<EventResponse> model
+            is List<EventResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

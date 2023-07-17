@@ -28,7 +28,7 @@ public static class OrganizationEndpoints
                         .ThenInclude(to => to.Talk)
                         .Select(m => m.MapOrganizationResponse())
                         .ToListAsync()
-            is List<OrganizationResponse> model
+            is List<OrganizationResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

@@ -27,7 +27,7 @@ public static class CategoryEndpoints
                         .Include(c => c.Talks)
                         .Select(m => m.MapCategoryResponse())
                         .ToListAsync()
-            is List<CategoryResponse> model
+            is List<CategoryResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })
