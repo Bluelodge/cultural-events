@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class CategoryEndpoints
             )]
             [SwaggerResponse(200, "Categories successfully returned")]
             [SwaggerResponse(404, "Categories don't exist")]
+            [SwaggerResponseExample(200, typeof(CategoryExample.CategoryResponse))]
         async (ApplicationDbContext db) =>
         {
             return await db.Category
@@ -40,6 +43,7 @@ public static class CategoryEndpoints
             )]
             [SwaggerResponse(200, "Category successfully returned")]
             [SwaggerResponse(404, "Category doesn't exist")]
+            [SwaggerResponseExample(200, typeof(CategoryExample.CategoryResponse))]
         async (int id, ApplicationDbContext db) =>
         {
             return await db.Category
@@ -62,6 +66,7 @@ public static class CategoryEndpoints
             )]
             [SwaggerResponse(201, "Category successfully created")]
             [SwaggerResponse(409, "Can't create Category due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(CategoryExample.Category))]
         async (EventsDTO.Category input, ApplicationDbContext db) =>
         {
             // Check if exist

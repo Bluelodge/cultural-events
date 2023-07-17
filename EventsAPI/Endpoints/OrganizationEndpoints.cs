@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class OrganizationEndpoints
             )]
             [SwaggerResponse(200, "Organizations successfully returned")]
             [SwaggerResponse(404, "Organizations don't exist")]
+            [SwaggerResponseExample(200, typeof(OrganizationExample.OrganizationResponse))]
         async (ApplicationDbContext db) =>
         {
             return await db.Organization
@@ -41,6 +44,7 @@ public static class OrganizationEndpoints
             )]
             [SwaggerResponse(200, "Organization successfully returned")]
             [SwaggerResponse(404, "Organization doesn't exist")]
+            [SwaggerResponseExample(200, typeof(OrganizationExample.OrganizationResponse))]
         async (int id, ApplicationDbContext db) =>
         {
             return await db.Organization
@@ -64,6 +68,7 @@ public static class OrganizationEndpoints
             )]
             [SwaggerResponse(201, "Organization successfully created")]
             [SwaggerResponse(409, "Can't create Organization due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(OrganizationExample.Organization))]
         async (EventsDTO.Organization input, ApplicationDbContext db) =>
         {
             // Check if Organization (corporatename) already exists

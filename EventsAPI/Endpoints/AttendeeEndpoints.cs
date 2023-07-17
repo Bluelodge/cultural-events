@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class AttendeeEndpoints
             )]
             [SwaggerResponse(200, "Attendee successfully returned")]
             [SwaggerResponse(404, "Attendee doesn't exist")]
+            [SwaggerResponseExample(200, typeof(AttendeeExample.AttendeeResponse))]
         async (string username, ApplicationDbContext db) =>
         {
             return await db.Attendee
@@ -39,6 +42,7 @@ public static class AttendeeEndpoints
             )]
             [SwaggerResponse(201, "Attendee successfully created")]
             [SwaggerResponse(409, "Can't create Attendee due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(AttendeeExample.Attendee))]
         async (EventsDTO.Attendee input, ApplicationDbContext db) =>
         {
             // Check if Attendee (username or email) already exist
@@ -156,6 +160,7 @@ public static class AttendeeEndpoints
             )]
             [SwaggerResponse(200, "Attendee's list of Talks successfully returned")]
             [SwaggerResponse(404, "Attendee doesn't exist")]
+            [SwaggerResponseExample(200, typeof(TalkExample.Talk))]
         async (string username, ApplicationDbContext db) =>
         {
             var talks = await db.Talk
@@ -183,6 +188,7 @@ public static class AttendeeEndpoints
             [SwaggerResponse(201, "Relation successfully created")]
             [SwaggerResponse(404, "Attendee or relation doesn't exist")]
             [SwaggerResponse(409, "Can't create relation due to conflicts in unique key")]
+            [SwaggerResponseExample(201, typeof(TalkExample.Talk))]
         async (string username, int talkId, ApplicationDbContext db) =>
         {
             // Check if Attendee exist
@@ -226,7 +232,7 @@ public static class AttendeeEndpoints
         })
         .WithTags("Attendee")
         .WithName("AddTalkToAttendee")
-        .Produces<AttendeeResponse>(StatusCodes.Status201Created);
+        .Produces<TalkResponse>(StatusCodes.Status201Created);
 
         // Delete many-to-many with Talk
         routes.MapDelete("/api/Attendees/{username}/Talks/{talkId}",

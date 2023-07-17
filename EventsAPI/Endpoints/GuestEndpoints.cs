@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class GuestEndpoints
             )]
             [SwaggerResponse(200, "Guests successfully returned")]
             [SwaggerResponse(404, "Guests don't exist")]
+            [SwaggerResponseExample(200, typeof(GuestExample.GuestResponse))]
         async (ApplicationDbContext db) =>
         {
             return await db.Guest
@@ -41,6 +44,7 @@ public static class GuestEndpoints
             )]
             [SwaggerResponse(200, "Guest successfully returned")]
             [SwaggerResponse(404, "Guest doesn't exist")]
+            [SwaggerResponseExample(200, typeof(GuestExample.GuestResponse))]
         async (int id, ApplicationDbContext db) =>
         {
             return await db.Guest
@@ -64,6 +68,7 @@ public static class GuestEndpoints
             )]
             [SwaggerResponse(201, "Guest successfully created")]
             [SwaggerResponse(409, "Can't create Guest due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(GuestExample.Guest))]
         async (EventsDTO.Guest input, ApplicationDbContext db) =>
         {
             // Check if exist (composite key)

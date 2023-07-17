@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class TalkEndpoints
             )]
             [SwaggerResponse(200, "Talks successfully returned")]
             [SwaggerResponse(404, "Talks don't exist")]
+            [SwaggerResponseExample(200, typeof(TalkExample.TalkResponse))]
         async (ApplicationDbContext db) =>
         {
             return await db.Talk
@@ -45,6 +48,7 @@ public static class TalkEndpoints
             )]
             [SwaggerResponse(200, "Talk successfully returned")]
             [SwaggerResponse(404, "Talk doesn't exist")]
+            [SwaggerResponseExample(200, typeof(TalkExample.TalkResponse))]
         async (int id, ApplicationDbContext db) =>
         {
             return await db.Talk
@@ -72,6 +76,7 @@ public static class TalkEndpoints
             )]
             [SwaggerResponse(201, "Talk successfully created")]
             [SwaggerResponse(409, "Can't create Talk due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(TalkExample.Talk))]
         async (EventsDTO.Talk input, ApplicationDbContext db) =>
         {
             // Check if exist and belongs to same Event

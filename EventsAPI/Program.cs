@@ -1,5 +1,7 @@
 using EventsAPI.Data;
 using EventsAPI.Endpoints;
+using System.Reflection;
+using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -19,7 +21,11 @@ services.AddSwaggerGen(options =>
 
     // API documentation
     options.EnableAnnotations();
+    options.ExampleFilters();
 });
+
+// Allow examples in responses 
+services.AddSwaggerExamplesFromAssemblies(Assembly.GetEntryAssembly());
 
 var app = builder.Build();
 

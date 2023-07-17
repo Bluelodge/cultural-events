@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using EventsAPI.Data;
+using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EventsAPI.Endpoints;
@@ -17,6 +19,7 @@ public static class EventEndpoints
             )]
             [SwaggerResponse(200, "Events successfully returned")]
             [SwaggerResponse(404, "Events don't exist")]
+            [SwaggerResponseExample(200, typeof(EventExample.EventResponse))]
         async (ApplicationDbContext db) =>
         {
             return await db.Event
@@ -40,6 +43,7 @@ public static class EventEndpoints
             )]
             [SwaggerResponse(200, "Event successfully returned")]
             [SwaggerResponse(404, "Event doesn't exist")]
+            [SwaggerResponseExample(200, typeof(EventExample.EventResponse))]
         async (int id, ApplicationDbContext db) =>
             {
                 return await db.Event
@@ -62,6 +66,7 @@ public static class EventEndpoints
             )]
             [SwaggerResponse(201, "Event successfully created")]
             [SwaggerResponse(409, "Can't create Event due to conflicts with unique key")]
+            [SwaggerResponseExample(201, typeof(EventExample.Event))]
         async (EventsDTO.Event input, ApplicationDbContext db) =>
         {
             // Check if exist
