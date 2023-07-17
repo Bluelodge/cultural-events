@@ -12,7 +12,7 @@ public class TalkExample
             {
                 Id = 1,
                 Title = "Talk title",
-                Summarize = "",
+                Summarize = "Brief description of the Talk's main purpose",
                 StartTime = DateTimeOffset.Now,
                 EndTime = DateTimeOffset.UtcNow,
                 CategoryId = 1,
@@ -29,7 +29,7 @@ public class TalkExample
             {
                 Id = 1,
                 Title = "Talk title",
-                Summarize = "",
+                Summarize = "Brief description of the Talk's main purpose",
                 StartTime = DateTimeOffset.Now,
                 EndTime = DateTimeOffset.UtcNow,
                 CategoryId = 1,

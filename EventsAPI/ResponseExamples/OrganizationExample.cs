@@ -13,7 +13,7 @@ public class OrganizationExample
                 Id = 1,
                 Name = "Public organization name",
                 CorporateName = "Organization Inc.",
-                WebSite = "https//www.organizationwebsite.com"
+                WebSite = "https://organizationwebsite.com"
             };
         }
     }
@@ -27,7 +27,7 @@ public class OrganizationExample
                 Id = 1,
                 Name = "Public organization name",
                 CorporateName = "Organization Inc.",
-                WebSite = "https//www.organizationwebsite.com",
+                WebSite = "https://organizationwebsite.com",
                 Talks = new List<EventsDTO.Talk>()
                 {
                     new()

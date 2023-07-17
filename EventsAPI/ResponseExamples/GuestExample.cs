@@ -14,8 +14,8 @@ public class GuestExample
                 FullName = "Jane Doe",
                 Position = "Profession title",
                 Bio = "Jane Doe's biography",
-                Social = "www.twitter.com/JaneDoe",
-                WebSite = "https//www.guestwebsite.com"
+                Social = "https://twitter.com/JaneDoe",
+                WebSite = "https://guestwebsite.com"
             };
         }
     }
@@ -30,8 +30,8 @@ public class GuestExample
                 FullName = "Jane Doe",
                 Position = "Profession title",
                 Bio = "Jane Doe's biography",
-                Social = "www.twitter.com/JaneDoe",
-                WebSite = "https//www.guestwebsite.com",
+                Social = "https://twitter.com/JaneDoe",
+                WebSite = "https://guestwebsite.com",
                 Talks = new List<EventsDTO.Talk>()
                 {
                     new()
