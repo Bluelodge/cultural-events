@@ -2,6 +2,7 @@
 using EventsAPI.Data;
 using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -15,20 +16,38 @@ public static class GuestEndpoints
         routes.MapGet("/api/Guests",
             [SwaggerOperation(
                 Summary = "Get Guests",
-                Description = "Returns all Guests"
+                Description = "Returns all Guests with optional pagination"
             )]
             [SwaggerResponse(200, "Guests successfully returned")]
             [SwaggerResponse(404, "Guests don't exist")]
             [SwaggerResponseExample(200, typeof(GuestExample.GuestResponse))]
-        async (ApplicationDbContext db) =>
+        async ([FromQuery] int? pageNumber, [FromQuery] int? resultsPerPage, ApplicationDbContext db) =>
         {
-            return await db.Guest
+            int page = pageNumber ?? 0;
+            int amount = resultsPerPage ?? 0;
+            List<GuestResponse> guests;
+
+            if (page != 0 && amount != 0)
+            {
+                guests = await db.Guest
                         .AsNoTracking()
-                        .Include(g=> g.TalkGuests)
+                        .Include(g => g.TalkGuests)
                         .ThenInclude(tg => tg.Talk)
                         .Select(m => m.MapGuestResponse())
-                        .ToListAsync()
-            is List<GuestResponse> model && model.Count != 0
+                        .Skip((page - 1) * amount)
+                        .Take(amount)
+                        .ToListAsync();
+            }
+            else
+            {
+                guests = await db.Guest
+                        .AsNoTracking()
+                        .Include(g => g.TalkGuests)
+                        .ThenInclude(tg => tg.Talk)
+                        .Select(m => m.MapGuestResponse())
+                        .ToListAsync();
+            }
+                return guests is List<GuestResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

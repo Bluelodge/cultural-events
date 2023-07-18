@@ -2,6 +2,7 @@
 using EventsAPI.Data;
 using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -15,19 +16,36 @@ public static class EventEndpoints
         routes.MapGet("/api/Events",
             [SwaggerOperation(
                 Summary = "Get Events",
-                Description = "Returns all Events"
+                Description = "Returns all Events with optional pagination"
             )]
             [SwaggerResponse(200, "Events successfully returned")]
             [SwaggerResponse(404, "Events don't exist")]
             [SwaggerResponseExample(200, typeof(EventExample.EventResponse))]
-        async (ApplicationDbContext db) =>
+        async ([FromQuery] int? pageNumber, [FromQuery] int? resultsPerPage, ApplicationDbContext db) =>
         {
-            return await db.Event
+            int page = pageNumber ?? 0;
+            int amount = resultsPerPage ?? 0;
+            List<EventResponse> events;
+
+            if (page != 0 && amount != 0)
+            {
+                events = await db.Event
                         .AsNoTracking()
                         .Include(e => e.Talks)
                         .Select(m => m.MapEventResponse())
-                        .ToListAsync()
-            is List<EventResponse> model && model.Count != 0
+                        .Skip((page - 1) * amount)
+                        .Take(amount)
+                        .ToListAsync();
+            }
+            else
+            {
+                events = await db.Event
+                        .AsNoTracking()
+                        .Include(e => e.Talks)
+                        .Select(m => m.MapEventResponse())
+                        .ToListAsync();
+            }
+            return events is List<EventResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

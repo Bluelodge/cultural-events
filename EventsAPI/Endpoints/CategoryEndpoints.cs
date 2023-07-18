@@ -2,6 +2,7 @@
 using EventsAPI.Data;
 using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -15,19 +16,37 @@ public static class CategoryEndpoints
         routes.MapGet("/api/Categories",
             [SwaggerOperation(
                 Summary = "Get Categories",
-                Description = "Returns all Categories"
+                Description = "Returns all Categories with optional pagination"
             )]
             [SwaggerResponse(200, "Categories successfully returned")]
             [SwaggerResponse(404, "Categories don't exist")]
             [SwaggerResponseExample(200, typeof(CategoryExample.CategoryResponse))]
-        async (ApplicationDbContext db) =>
+        async ([FromQuery] int? pageNumber, [FromQuery] int? resultsPerPage, ApplicationDbContext db) =>
         {
-            return await db.Category
+            int page = pageNumber ?? 0;
+            int amount = resultsPerPage ?? 0;
+            List<CategoryResponse> categories;
+
+            if (page != 0 && amount != 0)
+            {
+                categories = await db.Category
                         .AsNoTracking()
                         .Include(c => c.Talks)
                         .Select(m => m.MapCategoryResponse())
-                        .ToListAsync()
-            is List<CategoryResponse> model && model.Count != 0
+                        .Skip((page - 1) * amount)
+                        .Take(amount)
+                        .ToListAsync();
+            }
+            else
+            {
+                categories = await db.Category
+                        .AsNoTracking()
+                        .Include(c => c.Talks)
+                        .Select(m => m.MapCategoryResponse())
+                        .ToListAsync();
+            }
+
+            return categories is List<CategoryResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })

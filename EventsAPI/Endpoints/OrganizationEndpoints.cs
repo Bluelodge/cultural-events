@@ -2,6 +2,7 @@
 using EventsAPI.Data;
 using EventsAPI.ResponseExamples;
 using EventsDTO;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -15,20 +16,38 @@ public static class OrganizationEndpoints
         routes.MapGet("/api/Organizations",
             [SwaggerOperation(
                 Summary = "Get Organizations",
-                Description = "Returns all Organizations"
+                Description = "Returns all Organizations with optional pagination"
             )]
             [SwaggerResponse(200, "Organizations successfully returned")]
             [SwaggerResponse(404, "Organizations don't exist")]
             [SwaggerResponseExample(200, typeof(OrganizationExample.OrganizationResponse))]
-        async (ApplicationDbContext db) =>
+        async ([FromQuery] int? pageNumber, [FromQuery] int? resultsPerPage, ApplicationDbContext db) =>
         {
-            return await db.Organization
+        int page = pageNumber ?? 0;
+        int amount = resultsPerPage ?? 0;
+        List<OrganizationResponse> organizations;
+
+            if (page != 0 && amount != 0)
+            {
+                organizations = await db.Organization
                         .AsNoTracking()
                         .Include(o => o.TalkOrgs)
                         .ThenInclude(to => to.Talk)
                         .Select(m => m.MapOrganizationResponse())
-                        .ToListAsync()
-            is List<OrganizationResponse> model && model.Count != 0
+                        .Skip((page - 1) * amount)
+                        .Take(amount)
+                        .ToListAsync();
+            }
+            else
+            {
+                organizations = await db.Organization
+                        .AsNoTracking()
+                        .Include(o => o.TalkOrgs)
+                        .ThenInclude(to => to.Talk)
+                        .Select(m => m.MapOrganizationResponse())
+                        .ToListAsync();
+            }
+            return organizations is List<OrganizationResponse> model && model.Count != 0
                 ? Results.Ok(model)
                 : Results.NotFound();
         })
