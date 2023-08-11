@@ -3,6 +3,7 @@ using EventsAPI.Endpoints;
 using System.Reflection;
 using Swashbuckle.AspNetCore.Filters;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -23,6 +24,19 @@ services.AddSwaggerGen(options =>
     // API documentation
     options.EnableAnnotations();
     options.ExampleFilters();
+
+    // API info
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Events API",
+        Description = "An ASP.NET Core Minimal API for managing cultural events",
+        Contact = new OpenApiContact
+        {
+            Name = "Contact",
+            Url = new Uri("https://github.com/Bluelodge")
+        }
+    });
 });
 
 // Allow examples in responses 
